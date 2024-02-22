@@ -10,8 +10,6 @@ import "../../interestRateModels/IIRM.sol";
 
 import "../shared/types/Types.sol";
 
-import "hardhat/console.sol";
-
 abstract contract RiskManagerModule is IRiskManager, Base, BorrowUtils {
     using TypesLib for uint256;
 

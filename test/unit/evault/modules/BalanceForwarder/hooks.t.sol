@@ -255,14 +255,14 @@ contract BalanceForwarderTest_Hooks is EVaultTestBase {
         vm.prank(govFeeReceiver);
         eTST.enableBalanceForwarder();
 
-        assertEq(MBT.calls(feeReceiver, 0, false), 1);
-        assertEq(MBT.calls(govFeeReceiver, 0, false), 1);
+        vm.prank(alice);
+        eTST.transfer(FEES_ACCOUNT, 1 ether);
 
         vm.prank(alice);
         eTST.convertFees();
 
-        assertEq(MBT.calls(feeReceiver, 0, false), 2);
-        assertEq(MBT.calls(govFeeReceiver, 0, false), 2);
+        assertEq(MBT.calls(govFeeReceiver, 0.9 ether, false), 1);
+        assertEq(MBT.calls(feeReceiver, 0.1 ether, false), 1);
 
     }
 

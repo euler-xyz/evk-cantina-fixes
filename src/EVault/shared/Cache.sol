@@ -4,25 +4,34 @@ pragma solidity ^0.8.0;
 
 import {Storage} from "./Storage.sol";
 import {Errors} from "./Errors.sol";
+import {Events} from "./Events.sol";
 import {RPow} from "./lib/RPow.sol";
 import {SafeERC20Lib} from "./lib/SafeERC20Lib.sol";
 import {ProxyUtils} from "./lib/ProxyUtils.sol";
 
 import "./types/Types.sol";
 
-contract Cache is Storage, Errors {
+contract Cache is Storage, Errors, Events {
     using TypesLib for uint256;
     using SafeERC20Lib for IERC20;
 
     function updateMarket() internal returns (MarketCache memory marketCache) {
-        if (initMarketCache(marketCache)) {
+        (bool dirty, Shares newFees) = initMarketCache(marketCache);
+        if (dirty) {
             marketStorage.lastInterestAccumulatorUpdate = marketCache.lastInterestAccumulatorUpdate;
-            marketStorage.feesBalance = marketCache.feesBalance;
 
             marketStorage.totalShares = marketCache.totalShares;
             marketStorage.totalBorrows = marketCache.totalBorrows;
 
             marketStorage.interestAccumulator = marketCache.interestAccumulator;
+
+            if (!newFees.isZero()) {
+                marketStorage.users[FEES_ACCOUNT].setBalance(
+                    marketStorage.users[FEES_ACCOUNT].getBalance() + newFees
+                );
+
+                emit Transfer(address(0), FEES_ACCOUNT, newFees.toUint());
+            }
         }
     }
 
@@ -30,7 +39,7 @@ contract Cache is Storage, Errors {
         initMarketCache(marketCache);
     }
 
-    function initMarketCache(MarketCache memory marketCache) private view returns (bool dirty) {
+    function initMarketCache(MarketCache memory marketCache) private view returns (bool dirty, Shares newFees) {
         dirty = false;
 
         // Proxy metadata
@@ -41,7 +50,6 @@ contract Cache is Storage, Errors {
 
         marketCache.lastInterestAccumulatorUpdate = marketStorage.lastInterestAccumulatorUpdate;
         marketCache.poolSize = marketStorage.poolSize;
-        marketCache.feesBalance = marketStorage.feesBalance;
 
         marketCache.totalShares = marketStorage.totalShares;
         marketCache.totalBorrows = marketStorage.totalBorrows;
@@ -64,7 +72,7 @@ contract Cache is Storage, Errors {
 
             uint256 newTotalBorrows =
                 marketCache.totalBorrows.toUint() * newInterestAccumulator / marketCache.interestAccumulator;
-            uint256 newFeesBalance = marketCache.feesBalance.toUint();
+
             uint256 newTotalShares = marketCache.totalShares.toUint();
 
             uint256 feeAmount = (newTotalBorrows - marketCache.totalBorrows.toUint()) * interestFee
@@ -73,22 +81,19 @@ contract Cache is Storage, Errors {
             if (feeAmount != 0) {
                 uint256 poolAssets = marketCache.poolSize.toUint() + (newTotalBorrows >> INTERNAL_DEBT_PRECISION);
                 newTotalShares = poolAssets * newTotalShares / (poolAssets - feeAmount);
-                newFeesBalance += newTotalShares - marketCache.totalShares.toUint();
             }
 
             // Store new values in marketCache, only if no overflows will occur
 
-            if (
-                newTotalShares <= MAX_SANE_AMOUNT && newTotalBorrows <= MAX_SANE_DEBT_AMOUNT
-                    && newFeesBalance <= MAX_SANE_SMALL_AMOUNT
-            ) {
+            if (newTotalShares <= MAX_SANE_AMOUNT && newTotalBorrows <= MAX_SANE_DEBT_AMOUNT) {
                 marketCache.totalBorrows = newTotalBorrows.toOwed();
                 marketCache.interestAccumulator = newInterestAccumulator;
                 marketCache.lastInterestAccumulatorUpdate = uint40(block.timestamp);
 
                 if (newTotalShares != Shares.unwrap(marketCache.totalShares)) {
-                    marketCache.feesBalance = newFeesBalance.toFees();
-                    marketCache.totalShares = newTotalShares.toShares();
+                    Shares newTotal = newTotalShares.toShares();
+                    newFees = newTotal - marketCache.totalShares;
+                    marketCache.totalShares = newTotal;
                 }
             }
         }

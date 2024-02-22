@@ -183,8 +183,6 @@ contract EVault is
 
     function feesBalance() external view override useView(MODULE_FEES) returns (uint256) {}
 
-    function feesBalanceUnderlying() external view override useView(MODULE_FEES) returns (uint256) {}
-
     function interestFee() external view override useView(MODULE_FEES) returns (uint16) {}
 
     function protocolFeeShare() external view override useView(MODULE_FEES) returns (uint256) {}

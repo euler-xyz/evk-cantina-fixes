@@ -77,7 +77,6 @@ abstract contract Base is EVCClient, Cache {
         emit MarketStatus(
             a.totalShares.toUint(),
             a.totalBorrows.toAssetsUp().toUint(),
-            Fees.unwrap(a.feesBalance),
             a.poolSize.toUint(),
             a.interestAccumulator,
             interestRate,

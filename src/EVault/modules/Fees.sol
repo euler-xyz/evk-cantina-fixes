@@ -16,14 +16,7 @@ abstract contract FeesModule is IFees, Base, BalanceUtils {
 
     /// @inheritdoc IFees
     function feesBalance() external view virtual nonReentrantView returns (uint256) {
-        return loadMarket().feesBalance.toUint();
-    }
-
-    /// @inheritdoc IFees
-    function feesBalanceUnderlying() external view virtual nonReentrantView returns (uint256) {
-        MarketCache memory marketCache = loadMarket();
-
-        return marketCache.feesBalance.toAssetsDown(marketCache).toUint();
+        return marketStorage.users[FEES_ACCOUNT].getBalance().toUint();
     }
 
     /// @inheritdoc IFees
@@ -47,26 +40,18 @@ abstract contract FeesModule is IFees, Base, BalanceUtils {
     function convertFees() external virtual nonReentrant {
         (MarketCache memory marketCache, address account) = initOperation(OP_CONVERT_FEES, ACCOUNTCHECK_NONE);
 
-        // Decrease totalShares because increaseBalance will increase it by that total amount
-        marketStorage.totalShares =
-            marketCache.totalShares = marketCache.totalShares - marketCache.feesBalance.toShares();
-
         (address protocolReceiver, uint256 protocolFee) = protocolConfig.feeConfig(address(this));
         address feeReceiver = marketConfig.feeReceiver;
 
         if (feeReceiver == address(0)) protocolFee = 1e18; // governor forfeits fees
         else if (protocolFee > MAX_PROTOCOL_FEE_SHARE) protocolFee = MAX_PROTOCOL_FEE_SHARE;
 
-        Shares governorShares = marketCache.feesBalance.mulDiv(1e18 - protocolFee, 1e18).toShares();
-        Shares protocolShares = marketCache.feesBalance.toShares() - governorShares;
-        marketStorage.feesBalance = marketCache.feesBalance = Fees.wrap(0);
+        Shares fees = marketStorage.users[FEES_ACCOUNT].getBalance();
+        Shares governorShares = fees.mulDiv(1e18 - protocolFee, 1e18);
+        Shares protocolShares = fees - governorShares;
 
-        increaseBalance(
-            marketCache, feeReceiver, address(0), governorShares, governorShares.toAssetsDown(marketCache)
-        ); // TODO confirm address(0)
-        increaseBalance(
-            marketCache, protocolReceiver, address(0), protocolShares, protocolShares.toAssetsDown(marketCache)
-        );
+        transferBalance(FEES_ACCOUNT, feeReceiver, governorShares);
+        transferBalance(FEES_ACCOUNT, protocolReceiver, protocolShares);
 
         emit ConvertFees(
             account,

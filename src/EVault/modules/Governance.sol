@@ -94,7 +94,7 @@ abstract contract GovernanceModule is IGovernance, Base {
 
         if (!origLTV.initialised()) ltvList.push(collateral);
 
-        emit GovSetLTV(collateral, newLTV);
+        emit GovSetLTV(collateral, newLTV.targetTimestamp, newLTV.targetLTV, newLTV.rampDuration, newLTV.originalLTV);
     }
 
     /// @inheritdoc IGovernance

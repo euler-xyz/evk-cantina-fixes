@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import {LTVConfig} from "./types/LTVConfig.sol";
-
 abstract contract Events {
     event EVaultCreated(address indexed creator, address indexed asset, address dToken);
 
@@ -31,7 +29,6 @@ abstract contract Events {
     event MarketStatus(
         uint256 totalShares,
         uint256 totalBorrows,
-        uint96 feesBalance,
         uint256 poolSize,
         uint256 interestAccumulator,
         uint72 interestRate,
@@ -54,7 +51,7 @@ abstract contract Events {
     event GovSetSymbol(string newSymbol);
     event GovSetGovernorAdmin(address indexed newGovernorAdmin);
     event GovSetFeeReceiver(address indexed newFeeReceiver);
-    event GovSetLTV(address indexed collateral, LTVConfig newLTV);
+    event GovSetLTV(address indexed collateral, uint40 targetTimestamp, uint16 targetLTV, uint24 rampDuration, uint16 originalLTV);
     event GovSetIRM(address interestRateModel, bytes resetParams);
     event GovSetOracle(address oracle);
     event GovSetMarketPolicy(uint32 newPauseBitmask, uint16 newSupplyCap, uint16 newBorrowCap);

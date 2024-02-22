@@ -224,11 +224,9 @@ interface ILiquidation {
 }
 
 interface IFees {
-    /// @notice Balance of the fees accumulator, in internal book-keeping units (non-increasing)
+    /// @notice Balance of the fees accumulator, in shares
     function feesBalance() external view returns (uint256);
 
-    /// @notice Balance of the fees accumulator, in underlying units (increases as interest is earned)
-    function feesBalanceUnderlying() external view returns (uint256);
 
     /// @notice Retrieves the interest fee in effect for a market
     /// @return Amount of interest that is redirected as a fee, as a fraction scaled by INTEREST_FEE_SCALE (4e9)

@@ -32,6 +32,8 @@ bytes4 constant VAULT_STATUS_CHECK_RETURN_VALUE = IVault.checkVaultStatus.select
 
 uint256 constant VIRTUAL_DEPOSIT_AMOUNT = 1e6;
 
+address constant FEES_ACCOUNT = address(0xE);
+
 // Config
 
 uint256 constant CONFIG_SCALE = 60_000; // must fit into a uint16

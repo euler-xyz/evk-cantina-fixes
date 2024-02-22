@@ -23,7 +23,6 @@ abstract contract Storage {
         uint8 reentrancyLock;
         uint40 lastInterestAccumulatorUpdate;
         Assets poolSize;
-        Fees feesBalance;
 
         // Packed slot 14 + 18 = 32
         Shares totalShares;

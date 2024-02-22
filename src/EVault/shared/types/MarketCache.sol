@@ -12,6 +12,5 @@ struct MarketCache {
     Owed totalBorrows;
     uint40 lastInterestAccumulatorUpdate;
     Assets poolSize;
-    Fees feesBalance;
     uint256 interestAccumulator;
 }
