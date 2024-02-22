@@ -16,7 +16,7 @@ abstract contract FeesModule is IFees, Base, BalanceUtils {
 
     /// @inheritdoc IFees
     function feesBalance() external view virtual nonReentrantView returns (uint256) {
-        return (marketStorage.users[FEES_ACCOUNT].getBalance() + loadMarket().newFees).toUint();
+        return feesBalanceInternal().toUint();
     }
 
     /// @inheritdoc IFees

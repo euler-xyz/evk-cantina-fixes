@@ -11,7 +11,9 @@ import "./types/Types.sol";
 abstract contract BalanceUtils is Base {
     using TypesLib for uint256;
 
-    // Balances
+    function feesBalanceInternal() internal view returns (Shares) {
+        return marketStorage.users[FEES_ACCOUNT].getBalance() + loadMarket().newFees;
+    }
 
     function increaseBalance(
         MarketCache memory marketCache,

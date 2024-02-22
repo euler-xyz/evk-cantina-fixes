@@ -190,7 +190,7 @@ abstract contract ERC4626Module is IERC4626, Base, AssetTransfers, BalanceUtils 
     }
 
     function maxRedeemInternal(address owner) internal view returns (Shares) {
-        Shares max = marketStorage.users[owner].getBalance();
+        Shares max = owner == FEES_ACCOUNT ? feesBalanceInternal() : marketStorage.users[owner].getBalance();
         if (max.isZero()) return Shares.wrap(0);
 
         // When checks are deferred, all of the balance can be withdrawn, even if only temporarily
