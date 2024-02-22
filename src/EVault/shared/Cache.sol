@@ -16,8 +16,7 @@ contract Cache is Storage, Errors, Events {
     using SafeERC20Lib for IERC20;
 
     function updateMarket() internal returns (MarketCache memory marketCache) {
-        (bool dirty, Shares newFees) = initMarketCache(marketCache);
-        if (dirty) {
+        if (initMarketCache(marketCache)) {
             marketStorage.lastInterestAccumulatorUpdate = marketCache.lastInterestAccumulatorUpdate;
 
             marketStorage.totalShares = marketCache.totalShares;
@@ -25,12 +24,12 @@ contract Cache is Storage, Errors, Events {
 
             marketStorage.interestAccumulator = marketCache.interestAccumulator;
 
-            if (!newFees.isZero()) {
+            if (!marketCache.newFees.isZero()) {
                 marketStorage.users[FEES_ACCOUNT].setBalance(
-                    marketStorage.users[FEES_ACCOUNT].getBalance() + newFees
+                    marketStorage.users[FEES_ACCOUNT].getBalance() + marketCache.newFees
                 );
 
-                emit Transfer(address(0), FEES_ACCOUNT, newFees.toUint());
+                emit Transfer(address(0), FEES_ACCOUNT, marketCache.newFees.toUint());
             }
         }
     }
@@ -39,7 +38,7 @@ contract Cache is Storage, Errors, Events {
         initMarketCache(marketCache);
     }
 
-    function initMarketCache(MarketCache memory marketCache) private view returns (bool dirty, Shares newFees) {
+    function initMarketCache(MarketCache memory marketCache) private view returns (bool dirty) {
         dirty = false;
 
         // Proxy metadata
@@ -92,7 +91,7 @@ contract Cache is Storage, Errors, Events {
 
                 if (newTotalShares != Shares.unwrap(marketCache.totalShares)) {
                     Shares newTotal = newTotalShares.toShares();
-                    newFees = newTotal - marketCache.totalShares;
+                    marketCache.newFees = newTotal - marketCache.totalShares;
                     marketCache.totalShares = newTotal;
                 }
             }

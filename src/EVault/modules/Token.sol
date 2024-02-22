@@ -37,7 +37,8 @@ abstract contract TokenModule is IToken, Base, BalanceUtils {
 
     /// @inheritdoc IERC20
     function balanceOf(address account) external view virtual nonReentrantView returns (uint256) {
-        return marketStorage.users[account].getBalance().toUint();
+        uint256 balance = marketStorage.users[account].getBalance().toUint();
+        return account == FEES_ACCOUNT ? balance + loadMarket().newFees.toUint() : balance;
     }
 
     /// @inheritdoc IERC20
