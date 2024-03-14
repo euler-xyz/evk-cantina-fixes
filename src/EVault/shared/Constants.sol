@@ -45,3 +45,4 @@ uint32 constant OP_TOUCH = 1 << 14;
 uint32 constant OP_ACCRUE_INTEREST = 1 << 15;
 uint32 constant OP_SOCIALIZE_DEBT = 1 << 16;
 uint32 constant OP_VALIDATE_ASSET_RECEIVER = 1 << 17;
+uint32 constant OP_SHUTDOWN = type(uint32).max;
