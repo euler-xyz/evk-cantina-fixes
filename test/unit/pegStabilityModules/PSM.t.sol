@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {PSM} from "../../../src/pegStabilityModules/PSM.sol";
-import {ESynth, IEVC} from "../../../src/ESynth/ESynth.sol";
+import {PSM} from "../../../src/synths/PSM.sol";
+import {ESynth, IEVC} from "../../../src/synths/ESynth.sol";
 import {TestERC20} from "../../mocks/TestERC20.sol";
 import {EthereumVaultConnector} from "ethereum-vault-connector/EthereumVaultConnector.sol";
 
