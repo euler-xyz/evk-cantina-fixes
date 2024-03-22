@@ -344,13 +344,16 @@ interface IGovernance {
     function interestRateModel() external view returns (address);
 
     /// @notice Retrieves a bitmask indicating which operations are disabled.
-    function disabledOps() external view returns (uint32);
+    function disabledOps() external view returns (uint24);
+
+    /// @notice Retrieves a bitmask indicating which operations are checked for alignment.
+    function alignedOps() external view returns (uint24);
 
     /// @notice Retrieves a bitmask indicating which operations are locked.
-    function lockedOps() external view returns (uint32);
+    function lockedOps() external view returns (uint24);
 
     /// @notice Retrieves a bitmask indicating enabled config flags.
-    function configFlags() external view returns (uint32);
+    function configFlags() external view returns (uint24);
 
     /// @notice Retrieves supply and borrow caps in AmountCap format
     function caps() external view returns (uint16 supplyCap, uint16 borrowCap);
@@ -370,6 +373,9 @@ interface IGovernance {
     /// @notice Retrieves the address of the oracle contract
     function oracle() external view returns (address);
 
+    /// @notice Retrieves the address of the alignment enforcer
+    function alignmentEnforcer() external view returns (address);
+
     /// @notice Splits accrued fees balance according to protocol fee share and transfers shares to the governor fee receiver and protocol fee receiver
     function convertFees() external;
 
@@ -388,6 +394,9 @@ interface IGovernance {
     /// @notice Set a new governor fee receiver address
     function setFeeReceiver(address newFeeReceiver) external;
 
+    /// @notice Set a new alignment enforcer address
+    function setAlignmentEnforcer(address newAlignmentEnforcer) external;
+
     /// @notice Set a new LTV config
     /// @param collateral Address of collateral to set LTV for
     /// @param ltv New LTV in 1e4 scale
@@ -403,13 +412,16 @@ interface IGovernance {
     function setIRM(address newModel) external;
 
     /// @notice Set new bitmap indicating which operations should be disabled. Operations are defined in Constants.sol
-    function setDisabledOps(uint32 newDisabledOps) external;
+    function setDisabledOps(uint24 newDisabledOps) external;
+
+    /// @notice Set new bitmap indicating which operations should be checked for alignment. Operations are defined in Constants.sol
+    function setAlignedOps(uint24 newDisabledOps) external;
 
     /// @notice Set new bitmap indicating which operations should be locked. Operations are defined in Constants.sol
-    function setLockedOps(uint32 newLockedOps) external;
+    function setLockedOps(uint24 newLockedOps) external;
 
     /// @notice Set new bitmap indicating which config flags should be enabled. Flags are defined in Constants.sol
-    function setConfigFlags(uint32 newConfigFlags) external;
+    function setConfigFlags(uint24 newConfigFlags) external;
 
     /// @notice Set new supply and borrow caps in AmountCap format
     function setCaps(uint16 supplyCap, uint16 borrowCap) external;

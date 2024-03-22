@@ -25,30 +25,33 @@ address constant CHECKACCOUNT_CALLER = address(1);
 
 // Operations
 
-uint32 constant OP_DEPOSIT = 1 << 0;
-uint32 constant OP_MINT = 1 << 1;
-uint32 constant OP_WITHDRAW = 1 << 2;
-uint32 constant OP_REDEEM = 1 << 3;
-uint32 constant OP_TRANSFER = 1 << 4;
-uint32 constant OP_SKIM = 1 << 5;
-uint32 constant OP_BORROW = 1 << 6;
-uint32 constant OP_REPAY = 1 << 7;
-uint32 constant OP_LOOP = 1 << 8;
-uint32 constant OP_DELOOP = 1 << 9;
-uint32 constant OP_PULL_DEBT = 1 << 10;
-uint32 constant OP_CONVERT_FEES = 1 << 11;
-uint32 constant OP_LIQUIDATE = 1 << 12;
-uint32 constant OP_FLASHLOAN = 1 << 13;
-uint32 constant OP_TOUCH = 1 << 14;
-uint32 constant OP_ACCRUE_INTEREST = 1 << 15;
+uint24 constant OP_DEPOSIT = 1 << 0;
+uint24 constant OP_MINT = 1 << 1;
+uint24 constant OP_WITHDRAW = 1 << 2;
+uint24 constant OP_REDEEM = 1 << 3;
+uint24 constant OP_TRANSFER = 1 << 4;
+uint24 constant OP_SKIM = 1 << 5;
+uint24 constant OP_BORROW = 1 << 6;
+uint24 constant OP_REPAY = 1 << 7;
+uint24 constant OP_LOOP = 1 << 8;
+uint24 constant OP_DELOOP = 1 << 9;
+uint24 constant OP_PULL_DEBT = 1 << 10;
+uint24 constant OP_CONVERT_FEES = 1 << 11;
+uint24 constant OP_LIQUIDATE = 1 << 12;
+uint24 constant OP_FLASHLOAN = 1 << 13;
+uint24 constant OP_TOUCH = 1 << 14;
+uint24 constant OP_ACCRUE_INTEREST = 1 << 15;
 
 // Config Flags
 
-uint32 constant CFG_DONT_SOCIALIZE_DEBT = 1 << 0;
-uint32 constant CFG_EVC_COMPATIBLE_ASSET = 1 << 1;
-uint32 constant CFG_ONLY_ASSET_CAN_DEPOSIT = 1 << 2;
+uint24 constant CFG_DONT_SOCIALIZE_DEBT = 1 << 0;
+uint24 constant CFG_EVC_COMPATIBLE_ASSET = 1 << 1;
 
 // EVC authentication
 
 // in order to perform these operations, the account must have the vault installed as a controller
-uint32 constant CONTROLLER_REQUIRED_OPS = OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;
+uint24 constant CONTROLLER_REQUIRED_OPS = OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;
+
+// operations that require to check the account status
+uint24 constant CHECKACCOUNT_OPS =
+    OP_WITHDRAW | OP_REDEEM | OP_TRANSFER | OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;

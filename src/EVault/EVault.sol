@@ -181,11 +181,13 @@ contract EVault is Dispatch {
 
     function interestRateModel() public override virtual useView(MODULE_GOVERNANCE) view returns (address) {}
 
-    function disabledOps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint32) {}
+    function disabledOps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint24) {}
 
-    function lockedOps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint32) {}
+    function alignedOps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint24) {}
 
-    function configFlags() public override virtual useView(MODULE_GOVERNANCE) view returns (uint32) {}
+    function lockedOps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint24) {}
+
+    function configFlags() public override virtual useView(MODULE_GOVERNANCE) view returns (uint24) {}
 
     function caps() public override virtual useView(MODULE_GOVERNANCE) view returns (uint16 supplyCap, uint16 borrowCap) {}
 
@@ -198,6 +200,8 @@ contract EVault is Dispatch {
     function unitOfAccount() public override virtual useView(MODULE_GOVERNANCE) view returns (address) {}
 
     function oracle() public override virtual useView(MODULE_GOVERNANCE) view returns (address) {}
+
+    function alignmentEnforcer() public override virtual useView(MODULE_GOVERNANCE) view returns (address) {}
 
 
     function convertFees() public override virtual callThroughEVC use(MODULE_GOVERNANCE) {}
@@ -212,17 +216,21 @@ contract EVault is Dispatch {
 
     function setFeeReceiver(address newFeeReceiver) public override virtual use(MODULE_GOVERNANCE) {}
 
+    function setAlignmentEnforcer(address newAlignmentEnforcer) public override virtual use(MODULE_GOVERNANCE) {}
+
     function setLTV(address collateral, uint16 ltv, uint32 rampDuration) public override virtual use(MODULE_GOVERNANCE) {}
 
     function clearLTV(address collateral) public override virtual use(MODULE_GOVERNANCE) {}
 
     function setIRM(address newModel) public override virtual use(MODULE_GOVERNANCE) {}
 
-    function setDisabledOps(uint32 newDisabledOps) public override virtual use(MODULE_GOVERNANCE) {}
+    function setDisabledOps(uint24 newDisabledOps) public override virtual use(MODULE_GOVERNANCE) {}
 
-    function setLockedOps(uint32 newLockedOps) public override virtual use(MODULE_GOVERNANCE) {}
+    function setAlignedOps(uint24 newDisabledOps) public override virtual use(MODULE_GOVERNANCE) {}
 
-    function setConfigFlags(uint32 newConfigFlags) public override virtual use(MODULE_GOVERNANCE) {}
+    function setLockedOps(uint24 newLockedOps) public override virtual use(MODULE_GOVERNANCE) {}
+
+    function setConfigFlags(uint24 newConfigFlags) public override virtual use(MODULE_GOVERNANCE) {}
 
     function setCaps(uint16 supplyCap, uint16 borrowCap) public override virtual use(MODULE_GOVERNANCE) {}
 

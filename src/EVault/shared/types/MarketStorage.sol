@@ -7,12 +7,13 @@ import {LTVConfig} from "./LTVConfig.sol";
 import {UserStorage} from "./UserStorage.sol";
 
 struct MarketStorage {
-    // Packed slot 6 + 14 + 2 + 2 + 4 + 1 + 1 = 30
+    // Packed slot 6 + 14 + 2 + 2 + 3 + 3 + 1 + 1 = 32
     uint48 lastInterestAccumulatorUpdate;
     Assets cash;
     AmountCap supplyCap;
     AmountCap borrowCap;
     Flags disabledOps;
+    Flags alignedOps;
     bool reentrancyLocked;
     bool snapshotInitialized;
 
@@ -37,9 +38,13 @@ struct MarketStorage {
     address creator;
 
     address governorAdmin;
+
     address pauseGuardian;
     Flags lockedOps;
+
     address feeReceiver;
+
+    address alignmentEnforcer;
 
     mapping(address account => UserStorage) users;
 

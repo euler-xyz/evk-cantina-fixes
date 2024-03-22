@@ -11,14 +11,14 @@ contract ESVaultTestDisabledOps is ESVaultTestBase {
     }
 
     function test_disabled_ops_after_init() public view {
-        uint32 disabledOps = eTST.disabledOps();
+        uint24 disabledOps = eTST.disabledOps();
         assertEq(disabledOps, SYNTH_VAULT_DISABLED_OPS);
     }
 
     function test_set_unsupported_ops_enabled() public {
-        uint32 newDisabledOps = 0x1; // nothing disabled
+        uint24 newDisabledOps = 0x1; // nothing disabled
         eTST.setDisabledOps(newDisabledOps);
-        uint32 disabledOps = eTST.disabledOps();
+        uint24 disabledOps = eTST.disabledOps();
 
         assertEq(disabledOps, newDisabledOps | SYNTH_VAULT_DISABLED_OPS);
     }

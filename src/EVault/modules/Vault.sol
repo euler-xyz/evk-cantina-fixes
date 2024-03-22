@@ -112,7 +112,7 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
 
     /// @inheritdoc IERC4626
     function deposit(uint256 amount, address receiver) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_DEPOSIT, CHECKACCOUNT_NONE);
+        (MarketCache memory marketCache, address account) = initOperation(OP_DEPOSIT, CHECKACCOUNT_CALLER, receiver);
 
         Assets assets =
             amount == type(uint256).max ? marketCache.asset.balanceOf(account).toAssets() : amount.toAssets();
@@ -128,7 +128,7 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
 
     /// @inheritdoc IERC4626
     function mint(uint256 amount, address receiver) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_MINT, CHECKACCOUNT_NONE);
+        (MarketCache memory marketCache, address account) = initOperation(OP_MINT, CHECKACCOUNT_CALLER, receiver);
 
         Shares shares = amount.toShares();
         if (shares.isZero()) return 0;
@@ -142,7 +142,7 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
 
     /// @inheritdoc IERC4626
     function withdraw(uint256 amount, address receiver, address owner) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_WITHDRAW, owner);
+        (MarketCache memory marketCache, address account) = initOperation(OP_WITHDRAW, owner, receiver);
 
         Assets assets = amount.toAssets();
         if (assets.isZero()) return 0;
@@ -156,7 +156,7 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
 
     /// @inheritdoc IERC4626
     function redeem(uint256 amount, address receiver, address owner) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_REDEEM, owner);
+        (MarketCache memory marketCache, address account) = initOperation(OP_REDEEM, owner, receiver);
 
         Shares shares = amount == type(uint256).max ? marketStorage.users[owner].getBalance() : amount.toShares();
         if (shares.isZero()) return 0;
@@ -171,7 +171,7 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
 
     /// @inheritdoc IVault
     function skim(uint256 amount, address receiver) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_SKIM, CHECKACCOUNT_NONE);
+        (MarketCache memory marketCache, address account) = initOperation(OP_SKIM, CHECKACCOUNT_CALLER, receiver);
 
         Assets balance = marketCache.asset.balanceOf(address(this)).toAssets();
         Assets available = balance <= marketCache.cash ? Assets.wrap(0) : balance - marketCache.cash;
@@ -188,10 +188,6 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
         Shares shares = assets.toSharesDown(marketCache);
         if (shares.isZero()) revert E_ZeroShares();
 
-        if (marketCache.configFlags.isSet(CFG_ONLY_ASSET_CAN_DEPOSIT) && receiver != asset()) {
-            revert E_OnlyAssetCanDeposit();
-        }
-
         increaseBalance(marketCache, receiver, account, shares, assets);
         marketStorage.cash = marketCache.cash = marketCache.cash + assets;
 
@@ -205,10 +201,6 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
         address sender,
         address receiver
     ) private {
-        if (marketCache.configFlags.isSet(CFG_ONLY_ASSET_CAN_DEPOSIT) && sender != asset()) {
-            revert E_OnlyAssetCanDeposit();
-        }
-
         pullAssets(marketCache, sender, assets);
 
         increaseBalance(marketCache, receiver, sender, shares, assets);

@@ -32,6 +32,7 @@ import {MockPriceOracle} from "../../mocks/MockPriceOracle.sol";
 import {IRMTestDefault} from "../../mocks/IRMTestDefault.sol";
 
 import {AssertionsCustomTypes} from "../../helpers/AssertionsCustomTypes.sol";
+import {IAlignmentEnforcer} from "src/interfaces/IAlignmentEnforcer.sol";
 
 import "src/EVault/shared/Constants.sol";
 
@@ -112,7 +113,7 @@ contract EVaultTestBase is AssertionsCustomTypes, Test, DeployPermit2 {
         eTST2.setIRM(address(new IRMTestDefault()));
     }
 
-    uint32 internal constant SYNTH_VAULT_DISABLED_OPS = OP_MINT | OP_REDEEM | OP_SKIM | OP_LOOP | OP_DELOOP;
+    uint24 internal constant SYNTH_VAULT_DISABLED_OPS = OP_MINT | OP_REDEEM | OP_SKIM | OP_LOOP | OP_DELOOP;
 
     function createSynthEVault(address asset) internal returns (IEVault) {
         IEVault v = IEVault(factory.createProxy(true, abi.encodePacked(address(asset), address(oracle), unitOfAccount)));
@@ -123,8 +124,26 @@ contract EVaultTestBase is AssertionsCustomTypes, Test, DeployPermit2 {
 
         v.setInterestFee(1e4);
 
-        v.setConfigFlags(v.configFlags() | CFG_ONLY_ASSET_CAN_DEPOSIT);
+        v.setAlignedOps(OP_DEPOSIT | OP_MINT | OP_SKIM);
+        v.setAlignmentEnforcer(address(new MockAlignmentEnforcer()));
 
         return v;
+    }
+}
+
+contract MockAlignmentEnforcer {
+    error E_OnlyAssetCanDeposit();
+
+    function alignmentEnforcerHook(uint24 operation, address, address accountWorseOff, address)
+        external
+        view
+        returns (bytes4)
+    {
+        if ((operation & (OP_DEPOSIT | OP_MINT | OP_SKIM)) != 0) {
+            address asset = IEVault(msg.sender).asset();
+
+            if (accountWorseOff != asset) revert E_OnlyAssetCanDeposit();
+        }
+        return this.alignmentEnforcerHook.selector;
     }
 }

@@ -46,7 +46,8 @@ abstract contract LiquidationModule is ILiquidation, Base, BalanceUtils, Liquidi
         virtual
         nonReentrant
     {
-        (MarketCache memory marketCache, address liquidator) = initOperation(OP_LIQUIDATE, CHECKACCOUNT_CALLER);
+        (MarketCache memory marketCache, address liquidator) =
+            initOperation(OP_LIQUIDATE, CHECKACCOUNT_CALLER, violator);
 
         LiquidationCache memory liqCache =
             calculateLiquidation(marketCache, liquidator, violator, collateral, repayAssets);
@@ -78,8 +79,8 @@ abstract contract LiquidationModule is ILiquidation, Base, BalanceUtils, Liquidi
         if (liqCache.violator == liqCache.liquidator) revert E_SelfLiquidation();
         // Only liquidate trusted collaterals to make sure yield transfer has no side effects.
         if (!isRecognizedCollateral(liqCache.collateral)) revert E_BadCollateral();
-        // Verify this vault is the controller for the violator
-        verifyController(liqCache.violator);
+        // Validate this vault is the controller for the violator
+        validateController(liqCache.violator);
         // Violator must have enabled the collateral to be transferred to the liquidator
         if (!isCollateralEnabled(liqCache.violator, liqCache.collateral)) revert E_CollateralDisabled();
         // Violator's health check must not be deferred, meaning no prior operations on violator's account

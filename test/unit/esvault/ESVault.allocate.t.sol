@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {ESVaultTestBase, ESynth} from "./ESVaultTestBase.t.sol";
 import {Errors} from "../../../src/EVault/shared/Errors.sol";
+import {MockAlignmentEnforcer} from "../evault/EVaultTestBase.t.sol";
 
 contract ESVaultTestAllocate is ESVaultTestBase {
     function setUp() public override {
@@ -17,14 +18,14 @@ contract ESVaultTestAllocate is ESVaultTestBase {
         eTST.setLockedOps(0);
         eTST.setDisabledOps(0);
 
-        vm.expectRevert(Errors.E_OnlyAssetCanDeposit.selector);
+        vm.expectRevert(MockAlignmentEnforcer.E_OnlyAssetCanDeposit.selector);
         eTST.deposit(100, address(this));
 
-        vm.expectRevert(Errors.E_OnlyAssetCanDeposit.selector);
+        vm.expectRevert(MockAlignmentEnforcer.E_OnlyAssetCanDeposit.selector);
         eTST.mint(100, address(this));
 
         assetTSTAsSynth.mint(address(eTST), 100);
-        vm.expectRevert(Errors.E_OnlyAssetCanDeposit.selector);
+        vm.expectRevert(MockAlignmentEnforcer.E_OnlyAssetCanDeposit.selector);
         eTST.skim(100, address(this));
     }
 

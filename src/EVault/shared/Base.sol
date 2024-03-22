@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 
 import {EVCClient} from "./EVCClient.sol";
 import {Cache} from "./Cache.sol";
+import {RevertBytes} from "./lib/RevertBytes.sol";
 
 import {IProtocolConfig} from "../../ProtocolConfig/IProtocolConfig.sol";
 import {IBalanceTracker} from "../../interfaces/IBalanceTracker.sol";
+import {IAlignmentEnforcer} from "../../interfaces/IAlignmentEnforcer.sol";
 
 import "./types/Types.sol";
 
@@ -46,18 +48,21 @@ abstract contract Base is EVCClient, Cache {
     }
 
     // Generate a market snapshot and store it.
-    // Queue vault and maybe account checks in the EVC (caller, current, onBehalfOf or none).
-    // If needed, revert if this contract is not the controller of the authenticated account.
+    // Queue vault and maybe account checks in the EVC for the worse off account (depending on the CHECKACCOUNT_OPS constant).
+    // Depending on the CONTROLLER_REQUIRED_OPS constant, check if the caller is the controller of the authenticated account and revert if not.
     // Returns the MarketCache and active account.
-    function initOperation(uint32 operation, address accountToCheck)
+    function initOperation(uint24 operation, address worseOffAccount, address betterOffAccount)
         internal
         returns (MarketCache memory marketCache, address account)
     {
         marketCache = updateMarket();
+        account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
 
-        if (marketCache.disabledOps.isSet(operation)) {
-            revert E_OperationDisabled();
-        }
+        worseOffAccount = worseOffAccount == CHECKACCOUNT_CALLER ? account : worseOffAccount;
+        betterOffAccount = betterOffAccount == CHECKACCOUNT_CALLER ? account : betterOffAccount;
+
+        validateOperation(marketCache, operation, account, worseOffAccount, betterOffAccount);
+        EVCRequireStatusChecks(~CHECKACCOUNT_OPS & operation == 0 ? worseOffAccount : CHECKACCOUNT_NONE);
 
         // The snapshot is used only to verify that supply increased when checking the supply cap, and to verify that the borrows
         // increased when checking the borrowing cap. Caps are not checked when the capped variables decrease (become safer).
@@ -69,10 +74,41 @@ abstract contract Base is EVCClient, Cache {
             marketStorage.snapshotInitialized = marketCache.snapshotInitialized = true;
             snapshot.set(marketCache.cash, marketCache.totalBorrows.toAssetsUp());
         }
+    }
 
-        account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
+    // Checks whether the operation is disabled or requires alignment enforcement.
+    // Reverts if the operation is disabled or alignment enforcement fails.
+    function validateOperation(
+        MarketCache memory marketCache,
+        uint24 operation,
+        address caller,
+        address worseOffAccount,
+        address betterOffAccount
+    ) internal {
+        if (marketCache.disabledOps.isSet(operation)) {
+            revert E_OperationDisabled();
+        }
 
-        EVCRequireStatusChecks(accountToCheck == CHECKACCOUNT_CALLER ? account : accountToCheck);
+        if (marketCache.alignedOps.isSet(operation)) {
+            address alignmentEnforcer = marketStorage.alignmentEnforcer;
+
+            if (alignmentEnforcer != address(0)) {
+                (bool success, bytes memory data) = alignmentEnforcer.call(
+                    abi.encodeCall(
+                        IAlignmentEnforcer.alignmentEnforcerHook, (operation, caller, worseOffAccount, betterOffAccount)
+                    )
+                );
+
+                if (!success) {
+                    RevertBytes.revertBytes(data);
+                } else if (
+                    data.length != 32
+                        || abi.decode(data, (bytes32)) != bytes32(IAlignmentEnforcer.alignmentEnforcerHook.selector)
+                ) {
+                    revert E_OperationAlignment();
+                }
+            }
+        }
     }
 
     function logMarketStatus(MarketCache memory a, uint256 interestRate) internal {

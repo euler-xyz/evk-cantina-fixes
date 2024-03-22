@@ -50,6 +50,7 @@ contract Cache is Storage, Errors {
         marketCache.supplyCap = marketStorage.supplyCap.toUint();
         marketCache.borrowCap = marketStorage.borrowCap.toUint();
         marketCache.disabledOps = marketStorage.disabledOps;
+        marketCache.alignedOps = marketStorage.alignedOps;
         marketCache.snapshotInitialized = marketStorage.snapshotInitialized;
 
         marketCache.totalShares = marketStorage.totalShares;

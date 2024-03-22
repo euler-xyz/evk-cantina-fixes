@@ -27,7 +27,7 @@ type AmountCap is uint16;
 
 type ConfigAmount is uint16;
 
-type Flags is uint32;
+type Flags is uint24;
 
 using SharesLib for Shares global;
 using {

@@ -25,13 +25,15 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     event GovSetGovernorAdmin(address indexed newGovernorAdmin);
     event GovSetPauseGuardian(address newPauseGuardian);
     event GovSetFeeReceiver(address indexed newFeeReceiver);
+    event GovSetAlignmentEnforcer(address indexed newAlignmentEnforcer);
     event GovSetLTV(
         address indexed collateral, uint48 targetTimestamp, uint16 targetLTV, uint32 rampDuration, uint16 originalLTV
     );
     event GovSetIRM(address interestRateModel);
-    event GovSetDisabledOps(uint32 newDisabledOps);
-    event GovSetConfigFlags(uint32 newConfigFlags);
-    event GovSetLockedOps(uint32 newLockedOps);
+    event GovSetDisabledOps(uint24 newDisabledOps);
+    event GovSetAlignedOps(uint24 newDisabledOps);
+    event GovSetConfigFlags(uint24 newConfigFlags);
+    event GovSetLockedOps(uint24 newLockedOps);
     event GovSetCaps(uint16 newSupplyCap, uint16 newBorrowCap);
     event GovSetInterestFee(uint16 newFee);
 
@@ -106,18 +108,23 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function disabledOps() public view virtual reentrantOK returns (uint32) {
-        return (marketStorage.disabledOps.toUint32());
+    function disabledOps() public view virtual reentrantOK returns (uint24) {
+        return (marketStorage.disabledOps.toUint24());
     }
 
     /// @inheritdoc IGovernance
-    function configFlags() public view virtual reentrantOK returns (uint32) {
-        return (marketStorage.configFlags.toUint32());
+    function alignedOps() public view virtual reentrantOK returns (uint24) {
+        return (marketStorage.alignedOps.toUint24());
     }
 
     /// @inheritdoc IGovernance
-    function lockedOps() public view virtual reentrantOK returns (uint32) {
-        return (marketStorage.lockedOps.toUint32());
+    function configFlags() public view virtual reentrantOK returns (uint24) {
+        return (marketStorage.configFlags.toUint24());
+    }
+
+    /// @inheritdoc IGovernance
+    function lockedOps() public view virtual reentrantOK returns (uint24) {
+        return (marketStorage.lockedOps.toUint24());
     }
 
     /// @inheritdoc IGovernance
@@ -153,13 +160,23 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
+    function alignmentEnforcer() public view virtual reentrantOK returns (address) {
+        return marketStorage.alignmentEnforcer;
+    }
+
+    /// @inheritdoc IGovernance
     function convertFees() public virtual nonReentrant {
-        (MarketCache memory marketCache, address account) = initOperation(OP_CONVERT_FEES, CHECKACCOUNT_NONE);
+        address governorReceiver = marketStorage.feeReceiver;
+        (address protocolReceiver, uint16 protocolFee) = protocolConfig.protocolFeeConfig(address(this));
+
+        (MarketCache memory marketCache, address account) =
+            initOperation(OP_CONVERT_FEES, CHECKACCOUNT_NONE, governorReceiver);
+
+        // Alignment for the govenor fee receiver has already been checked in the initOperation.
+        // Now we check the alignment for the protocol fee receiver (not to call initOperation twice).
+        validateOperation(marketCache, OP_CONVERT_FEES, account, CHECKACCOUNT_NONE, protocolReceiver);
 
         if (marketCache.accumulatedFees.isZero()) return;
-
-        (address protocolReceiver, uint16 protocolFee) = protocolConfig.protocolFeeConfig(address(this));
-        address governorReceiver = marketStorage.feeReceiver;
 
         if (governorReceiver == address(0)) {
             protocolFee = 1e4; // governor forfeits fees
@@ -218,6 +235,12 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
+    function setAlignmentEnforcer(address newAlignmentEnforcer) public virtual nonReentrant governorOnly {
+        marketStorage.alignmentEnforcer = newAlignmentEnforcer;
+        emit GovSetAlignmentEnforcer(newAlignmentEnforcer);
+    }
+
+    /// @inheritdoc IGovernance
     function setLTV(address collateral, uint16 ltv, uint32 rampDuration) public virtual nonReentrant governorOnly {
         // self-collateralization is not allowed
         if (collateral == address(this)) revert E_InvalidLTVAsset();
@@ -266,10 +289,10 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function setDisabledOps(uint32 newDisabledOps) public virtual nonReentrant governorOrPauseGuardianOnly {
+    function setDisabledOps(uint24 newDisabledOps) public virtual nonReentrant governorOrPauseGuardianOnly {
         // Overwrite bits of locked ops with their currently set values
-        newDisabledOps = (newDisabledOps & ~marketStorage.lockedOps.toUint32())
-            | (marketStorage.disabledOps.toUint32() & marketStorage.lockedOps.toUint32());
+        newDisabledOps = (newDisabledOps & ~marketStorage.lockedOps.toUint24())
+            | (marketStorage.disabledOps.toUint24() & marketStorage.lockedOps.toUint24());
 
         // market is updated because:
         // if disabling interest accrual - the pending interest should be accrued
@@ -282,13 +305,19 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function setLockedOps(uint32 newLockedOps) public virtual nonReentrant governorOnly {
+    function setAlignedOps(uint24 newAlignedOps) public virtual nonReentrant governorOnly {
+        marketStorage.alignedOps = Flags.wrap(newAlignedOps);
+        emit GovSetAlignedOps(newAlignedOps);
+    }
+
+    /// @inheritdoc IGovernance
+    function setLockedOps(uint24 newLockedOps) public virtual nonReentrant governorOnly {
         marketStorage.lockedOps = Flags.wrap(newLockedOps);
         emit GovSetLockedOps(newLockedOps);
     }
 
     /// @inheritdoc IGovernance
-    function setConfigFlags(uint32 newConfigFlags) public virtual nonReentrant governorOnly {
+    function setConfigFlags(uint24 newConfigFlags) public virtual nonReentrant governorOnly {
         marketStorage.configFlags = Flags.wrap(newConfigFlags);
         emit GovSetConfigFlags(newConfigFlags);
     }
