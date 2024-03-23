@@ -166,17 +166,12 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
 
     /// @inheritdoc IGovernance
     function convertFees() public virtual nonReentrant {
-        address governorReceiver = marketStorage.feeReceiver;
-        (address protocolReceiver, uint16 protocolFee) = protocolConfig.protocolFeeConfig(address(this));
-
-        (MarketCache memory marketCache, address account) =
-            initOperation(OP_CONVERT_FEES, CHECKACCOUNT_NONE, governorReceiver);
-
-        // Alignment for the govenor fee receiver has already been checked in the initOperation.
-        // Now we check the alignment for the protocol fee receiver (not to call initOperation twice).
-        validateOperation(marketCache, OP_CONVERT_FEES, account, CHECKACCOUNT_NONE, protocolReceiver);
+        (MarketCache memory marketCache, address account) = initOperation(OP_CONVERT_FEES, CHECKACCOUNT_NONE);
 
         if (marketCache.accumulatedFees.isZero()) return;
+
+        (address protocolReceiver, uint16 protocolFee) = protocolConfig.protocolFeeConfig(address(this));
+        address governorReceiver = marketStorage.feeReceiver;
 
         if (governorReceiver == address(0)) {
             protocolFee = 1e4; // governor forfeits fees

@@ -32,7 +32,6 @@ import {MockPriceOracle} from "../../mocks/MockPriceOracle.sol";
 import {IRMTestDefault} from "../../mocks/IRMTestDefault.sol";
 
 import {AssertionsCustomTypes} from "../../helpers/AssertionsCustomTypes.sol";
-import {IAlignmentEnforcer} from "src/interfaces/IAlignmentEnforcer.sol";
 
 import "src/EVault/shared/Constants.sol";
 
@@ -133,17 +132,30 @@ contract EVaultTestBase is AssertionsCustomTypes, Test, DeployPermit2 {
 
 contract MockAlignmentEnforcer {
     error E_OnlyAssetCanDeposit();
+    error E_OnlyDepositAllowed();
+    error Test_AmountProhibited();
 
-    function alignmentEnforcerHook(uint24 operation, address, address accountWorseOff, address)
-        external
-        view
-        returns (bytes4)
-    {
-        if ((operation & (OP_DEPOSIT | OP_MINT | OP_SKIM)) != 0) {
-            address asset = IEVault(msg.sender).asset();
+    function deposit(uint256, address) external view {
+        onDeposit();
+    }
 
-            if (accountWorseOff != asset) revert E_OnlyAssetCanDeposit();
+    function mint(uint256, address) external view {
+        onDeposit();
+    }
+
+    function skim(uint256, address) external view {
+        onDeposit();
+    }
+
+    function onDeposit() internal view {
+        address asset = IEVault(msg.sender).asset();
+
+        if (asset != caller()) revert E_OnlyAssetCanDeposit();
+    }
+
+    function caller() internal pure returns (address _caller) {
+        assembly {
+            _caller := shr(96, calldataload(sub(calldatasize(), 20)))
         }
-        return this.alignmentEnforcerHook.selector;
     }
 }
