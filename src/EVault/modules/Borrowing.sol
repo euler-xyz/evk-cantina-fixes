@@ -124,7 +124,7 @@ abstract contract BorrowingModule is IBorrowing, Base, AssetTransfers, BalanceUt
 
     /// @inheritdoc IBorrowing
     function repay(uint256 amount, address receiver) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_REPAY, CHECKACCOUNT_NONE);
+        (MarketCache memory marketCache, address account) = initOperation(OP_REPAY, CHECKACCOUNT_CALLER);
 
         uint256 owed = getCurrentOwed(marketCache, receiver).toAssetsUp().toUint();
 
@@ -158,7 +158,7 @@ abstract contract BorrowingModule is IBorrowing, Base, AssetTransfers, BalanceUt
 
     /// @inheritdoc IBorrowing
     function deloop(uint256 amount, address debtFrom) public virtual nonReentrant returns (uint256) {
-        (MarketCache memory marketCache, address account) = initOperation(OP_DELOOP, CHECKACCOUNT_NONE);
+        (MarketCache memory marketCache, address account) = initOperation(OP_DELOOP, CHECKACCOUNT_CALLER);
 
         Assets owed = getCurrentOwed(marketCache, debtFrom).toAssetsUp();
         if (owed.isZero()) return 0;
@@ -206,12 +206,24 @@ abstract contract BorrowingModule is IBorrowing, Base, AssetTransfers, BalanceUt
 
     /// @inheritdoc IBorrowing
     function flashLoan(uint256 amount, bytes calldata data) public virtual nonReentrant {
-        if (marketStorage.disabledOps.isSet(OP_FLASHLOAN)) {
-            revert E_OperationDisabled();
-        }
+        Flags disabledOps = marketStorage.disabledOps;
+        Flags alignedOps = marketStorage.alignedOps;
 
-        (IERC20 asset,,) = ProxyUtils.metadata();
-        address account = EVCAuthenticate();
+        IERC20 asset;
+        address account;
+        if (alignedOps.isSet(OP_FLASHLOAN)) {
+            // load cache only if flashloan alignment needs to be enforced
+            MarketCache memory marketCache;
+            (marketCache, account) = initOperation(OP_FLASHLOAN, CHECKACCOUNT_NONE);
+            asset = marketCache.asset;
+        } else if (disabledOps.isSet(OP_FLASHLOAN)) {
+            // if alignment doesn't need to be enforced, but flashloan is disabled, revert
+            revert E_OperationDisabled();
+        } else {
+            // if flashloan is not disabled, and alignment doesn't need to be enforced, get the asset and account
+            (asset,,) = ProxyUtils.metadata();
+            account = EVCAuthenticate();
+        }
 
         uint256 origBalance = asset.balanceOf(address(this));
 

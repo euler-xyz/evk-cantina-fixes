@@ -46,19 +46,23 @@ abstract contract Base is EVCClient, Cache {
         _;
     }
 
-    // Generate a market snapshot and store it.
-    // Queue vault and maybe account checks in the EVC (caller, current, onBehalfOf or none).
-    // If needed, revert if this contract is not the controller of the authenticated account.
-    // Returns the MarketCache and active account.
-    function initOperation(uint24 operation, address accountToCheck)
+    // Queue vault status check.
+    // Depending on the CHECKACCOUNT_OPS constant, queue account status check for the account which health deteriorated.
+    // Depending on the CONTROLLER_REQUIRED_OPS constant, check if the caller is the controller of the authenticated account and revert if not.
+    // Returns the MarketCache and active authenticated account.
+    function initOperation(uint24 operation, address deterioratedHealthAccount)
         internal
         returns (MarketCache memory marketCache, address account)
     {
         marketCache = updateMarket();
-
         account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
 
         validateOperation(marketCache, operation, account);
+
+        deterioratedHealthAccount =
+            deterioratedHealthAccount == CHECKACCOUNT_CALLER ? account : deterioratedHealthAccount;
+
+        EVCRequireStatusChecks(~CHECKACCOUNT_OPS & operation == 0 ? deterioratedHealthAccount : CHECKACCOUNT_NONE);
 
         // The snapshot is used only to verify that supply increased when checking the supply cap, and to verify that the borrows
         // increased when checking the borrowing cap. Caps are not checked when the capped variables decrease (become safer).
@@ -70,17 +74,11 @@ abstract contract Base is EVCClient, Cache {
             marketStorage.snapshotInitialized = marketCache.snapshotInitialized = true;
             snapshot.set(marketCache.cash, marketCache.totalBorrows.toAssetsUp());
         }
-
-        EVCRequireStatusChecks(accountToCheck == CHECKACCOUNT_CALLER ? account : accountToCheck);
     }
 
     // Checks whether the operation is disabled or requires alignment enforcement.
     // Reverts if the operation is disabled or alignment enforcement fails.
-    function validateOperation(
-        MarketCache memory marketCache,
-        uint24 operation,
-        address account
-    ) internal {
+    function validateOperation(MarketCache memory marketCache, uint24 operation, address caller) internal {
         if (marketCache.disabledOps.isSet(operation)) {
             revert E_OperationDisabled();
         }
@@ -91,11 +89,11 @@ abstract contract Base is EVCClient, Cache {
 
         if (alignmentEnforcer != address(0)) {
             // It's up to the governance to ensure there is code under the address
-            (bool success, bytes memory data) = alignmentEnforcer.call(abi.encodePacked(msg.data, account));
+            (bool success, bytes memory data) = alignmentEnforcer.call(abi.encodePacked(msg.data, caller));
 
             if (!success) {
                 RevertBytes.revertBytes(data);
-            } 
+            }
         }
     }
 

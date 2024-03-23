@@ -51,3 +51,7 @@ uint24 constant CFG_EVC_COMPATIBLE_ASSET = 1 << 1;
 
 // in order to perform these operations, the account must have the vault installed as a controller
 uint24 constant CONTROLLER_REQUIRED_OPS = OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;
+
+// operations that require to check the account status
+uint24 constant CHECKACCOUNT_OPS =
+    OP_WITHDRAW | OP_REDEEM | OP_TRANSFER | OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;
