@@ -71,7 +71,7 @@ abstract contract TokenModule is IToken, Base, BalanceUtils {
 
     /// @inheritdoc IERC20
     function approve(address spender, uint256 amount) public virtual nonReentrant returns (bool) {
-        address account = EVCAuthenticate();
+        (, address account) = initOperation(OP_APPROVE, CHECKACCOUNT_NONE);
 
         setAllowance(account, spender, amount);
 

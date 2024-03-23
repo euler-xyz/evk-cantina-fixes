@@ -54,10 +54,14 @@ abstract contract Base is EVCClient, Cache {
         internal
         returns (MarketCache memory marketCache, address account)
     {
-        marketCache = updateMarket();
-        account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
+        if (~DEFERRED_OPS & operation == 0 && msg.sender != address(evc)) revert E_Unauthorized();
 
-        validateOperation(marketCache, operation, account);
+        account = EVCAuthenticate(~CONTROLLER_REQUIRED_OPS & operation == 0);
+        validateOperation(operation, account);
+
+        if (~LOAD_CACHE_OPS & operation == 0) {
+            marketCache = updateMarket();
+        }
 
         deterioratedHealthAccount =
             deterioratedHealthAccount == CHECKACCOUNT_CALLER ? account : deterioratedHealthAccount;
@@ -78,12 +82,15 @@ abstract contract Base is EVCClient, Cache {
 
     // Checks whether the operation is disabled or requires alignment enforcement.
     // Reverts if the operation is disabled or alignment enforcement fails.
-    function validateOperation(MarketCache memory marketCache, uint24 operation, address caller) internal {
-        if (marketCache.disabledOps.isSet(operation)) {
+    function validateOperation(uint24 operation, address caller) internal {
+        Flags disabledOps = marketStorage.disabledOps;
+        Flags alignedOps = marketStorage.alignedOps;
+
+        if (disabledOps.isSet(operation)) {
             revert E_OperationDisabled();
         }
 
-        if (marketCache.alignedOps.isNotSet(operation)) return;
+        if (alignedOps.isNotSet(operation)) return;
 
         address alignmentEnforcer = marketStorage.alignmentEnforcer;
 

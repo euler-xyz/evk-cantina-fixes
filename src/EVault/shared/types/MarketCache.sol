@@ -21,8 +21,6 @@ struct MarketCache {
 
     uint256 supplyCap;
     uint256 borrowCap;
-    Flags disabledOps;
-    Flags alignedOps;
     Flags configFlags;
     bool snapshotInitialized;
 }

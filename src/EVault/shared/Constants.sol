@@ -40,7 +40,11 @@ uint24 constant OP_CONVERT_FEES = 1 << 11;
 uint24 constant OP_LIQUIDATE = 1 << 12;
 uint24 constant OP_FLASHLOAN = 1 << 13;
 uint24 constant OP_TOUCH = 1 << 14;
-uint24 constant OP_ACCRUE_INTEREST = 1 << 15;
+uint24 constant OP_APPROVE = 1 << 15;
+uint24 constant OP_DISABLE_CONTROLLER = 1 << 16;
+uint24 constant OP_ENABLE_BALANCE_FORWARDER = 1 << 17;
+uint24 constant OP_DISABLE_BALANCE_FORWARDER = 1 << 18;
+uint24 constant OP_ACCRUE_INTEREST = 1 << 19;
 
 // Config Flags
 
@@ -48,6 +52,12 @@ uint24 constant CFG_DONT_SOCIALIZE_DEBT = 1 << 0;
 uint24 constant CFG_EVC_COMPATIBLE_ASSET = 1 << 1;
 
 // EVC authentication
+
+uint24 constant LOAD_CACHE_OPS = OP_DEPOSIT | OP_MINT | OP_WITHDRAW | OP_REDEEM | OP_TRANSFER | OP_SKIM | OP_BORROW
+    | OP_REPAY | OP_LOOP | OP_DELOOP | OP_PULL_DEBT | OP_CONVERT_FEES | OP_LIQUIDATE | OP_TOUCH;
+
+uint24 constant DEFERRED_OPS = OP_DEPOSIT | OP_MINT | OP_WITHDRAW | OP_REDEEM | OP_TRANSFER | OP_SKIM | OP_BORROW
+    | OP_REPAY | OP_LOOP | OP_DELOOP | OP_PULL_DEBT | OP_CONVERT_FEES | OP_LIQUIDATE | OP_TOUCH;
 
 // in order to perform these operations, the account must have the vault installed as a controller
 uint24 constant CONTROLLER_REQUIRED_OPS = OP_BORROW | OP_LOOP | OP_PULL_DEBT | OP_LIQUIDATE;

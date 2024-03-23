@@ -49,9 +49,8 @@ contract Cache is Storage, Errors {
         marketCache.cash = marketStorage.cash;
         marketCache.supplyCap = marketStorage.supplyCap.toUint();
         marketCache.borrowCap = marketStorage.borrowCap.toUint();
-        marketCache.disabledOps = marketStorage.disabledOps;
-        marketCache.alignedOps = marketStorage.alignedOps;
         marketCache.snapshotInitialized = marketStorage.snapshotInitialized;
+        Flags disabledOps = marketStorage.disabledOps;
 
         marketCache.totalShares = marketStorage.totalShares;
         marketCache.totalBorrows = marketStorage.totalBorrows;
@@ -67,7 +66,7 @@ contract Cache is Storage, Errors {
         if (deltaT > 0) {
             dirty = true;
 
-            if (marketCache.disabledOps.isSet(OP_ACCRUE_INTEREST)) {
+            if (disabledOps.isSet(OP_ACCRUE_INTEREST)) {
                 marketCache.lastInterestAccumulatorUpdate = uint48(block.timestamp);
                 return dirty;
             }

@@ -206,24 +206,8 @@ abstract contract BorrowingModule is IBorrowing, Base, AssetTransfers, BalanceUt
 
     /// @inheritdoc IBorrowing
     function flashLoan(uint256 amount, bytes calldata data) public virtual nonReentrant {
-        Flags disabledOps = marketStorage.disabledOps;
-        Flags alignedOps = marketStorage.alignedOps;
-
-        IERC20 asset;
-        address account;
-        if (alignedOps.isSet(OP_FLASHLOAN)) {
-            // load cache only if flashloan alignment needs to be enforced
-            MarketCache memory marketCache;
-            (marketCache, account) = initOperation(OP_FLASHLOAN, CHECKACCOUNT_NONE);
-            asset = marketCache.asset;
-        } else if (disabledOps.isSet(OP_FLASHLOAN)) {
-            // if alignment doesn't need to be enforced, but flashloan is disabled, revert
-            revert E_OperationDisabled();
-        } else {
-            // if flashloan is not disabled, and alignment doesn't need to be enforced, get the asset and account
-            (asset,,) = ProxyUtils.metadata();
-            account = EVCAuthenticate();
-        }
+        (, address account) = initOperation(OP_FLASHLOAN, CHECKACCOUNT_NONE);
+        (IERC20 asset,,) = ProxyUtils.metadata();
 
         uint256 origBalance = asset.balanceOf(address(this));
 

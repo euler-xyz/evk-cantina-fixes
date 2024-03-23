@@ -54,7 +54,7 @@ abstract contract RiskManagerModule is IRiskManager, Base, LiquidityUtils {
 
     /// @inheritdoc IRiskManager
     function disableController() public virtual nonReentrant {
-        address account = EVCAuthenticate();
+        (, address account) = initOperation(OP_DISABLE_CONTROLLER, CHECKACCOUNT_NONE);
 
         if (!marketStorage.users[account].getOwed().isZero()) revert E_OutstandingDebt();
 
