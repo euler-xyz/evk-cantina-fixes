@@ -7,7 +7,6 @@ import {Base} from "../shared/Base.sol";
 import {BorrowUtils} from "../shared/BorrowUtils.sol";
 import {DToken} from "../DToken.sol";
 import {ProxyUtils} from "../shared/lib/ProxyUtils.sol";
-import {RevertBytes} from "../shared/lib/RevertBytes.sol";
 import {MarketCache} from "../shared/types/MarketCache.sol";
 
 import "../shared/Constants.sol";
@@ -42,7 +41,7 @@ abstract contract InitializeModule is IInitialize, Base, BorrowUtils {
         marketStorage.lastInterestAccumulatorUpdate = uint48(block.timestamp);
         marketStorage.interestAccumulator = INITIAL_INTEREST_ACCUMULATOR;
         marketStorage.interestFee = DEFAULT_INTEREST_FEE.toConfigAmount();
-        marketStorage.creator = marketStorage.governorAdmin = marketStorage.pauseGuardian = proxyCreator;
+        marketStorage.creator = marketStorage.governorAdmin = proxyCreator;
 
         snapshot.reset();
 

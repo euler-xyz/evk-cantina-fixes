@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {EVCClient} from "./EVCClient.sol";
 import {Cache} from "./Cache.sol";
+import {RevertBytes} from "./lib/RevertBytes.sol";
 
 import {IProtocolConfig} from "../../ProtocolConfig/IProtocolConfig.sol";
 import {IBalanceTracker} from "../../interfaces/IBalanceTracker.sol";
@@ -54,10 +55,10 @@ abstract contract Base is EVCClient, Cache {
         returns (MarketCache memory marketCache, address account)
     {
         marketCache = updateMarket();
+        account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
 
-        if (marketCache.disabledOps.isSet(operation)) {
-            revert E_OperationDisabled();
-        }
+        validateOperation(marketCache, operation, account);
+        EVCRequireStatusChecks(accountToCheck == CHECKACCOUNT_CALLER ? account : accountToCheck);
 
         // The snapshot is used only to verify that supply increased when checking the supply cap, and to verify that the borrows
         // increased when checking the borrowing cap. Caps are not checked when the capped variables decrease (become safer).
@@ -69,10 +70,22 @@ abstract contract Base is EVCClient, Cache {
             marketStorage.snapshotInitialized = marketCache.snapshotInitialized = true;
             snapshot.set(marketCache.cash, marketCache.totalBorrows.toAssetsUp());
         }
+    }
 
-        account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
+    // Checks whether the operation is hookable and if so, calls the hook target.
+    function validateOperation(MarketCache memory marketCache, uint32 operation, address caller) internal {
+        if (marketCache.hookedOps.isNotSet(operation)) return;
 
-        EVCRequireStatusChecks(accountToCheck == CHECKACCOUNT_CALLER ? account : accountToCheck);
+        address hookTarget = marketStorage.hookTarget;
+        (bool success, bytes memory data) = hookTarget.call(abi.encodePacked(msg.data, caller));
+
+        if (!success) {
+            RevertBytes.revertBytes(data);
+        }
+
+        if (hookTarget.code.length == 0) {
+            revert E_OperationDisabled();
+        }
     }
 
     function logMarketStatus(MarketCache memory a, uint256 interestRate) internal {

@@ -23,15 +23,14 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     event GovSetName(string newName);
     event GovSetSymbol(string newSymbol);
     event GovSetGovernorAdmin(address indexed newGovernorAdmin);
-    event GovSetPauseGuardian(address newPauseGuardian);
     event GovSetFeeReceiver(address indexed newFeeReceiver);
+    event GovSetHookTarget(address indexed newHookTarget);
     event GovSetLTV(
         address indexed collateral, uint48 targetTimestamp, uint16 targetLTV, uint32 rampDuration, uint16 originalLTV
     );
     event GovSetIRM(address interestRateModel);
-    event GovSetDisabledOps(uint32 newDisabledOps);
+    event GovSetHookedOps(uint32 newHookeddOps);
     event GovSetConfigFlags(uint32 newConfigFlags);
-    event GovSetLockedOps(uint32 newLockedOps);
     event GovSetCaps(uint16 newSupplyCap, uint16 newBorrowCap);
     event GovSetInterestFee(uint16 newFee);
 
@@ -40,21 +39,9 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
         _;
     }
 
-    modifier governorOrPauseGuardianOnly() {
-        if (msg.sender != marketStorage.governorAdmin && msg.sender != marketStorage.pauseGuardian) {
-            revert E_Unauthorized();
-        }
-        _;
-    }
-
     /// @inheritdoc IGovernance
     function governorAdmin() public view virtual reentrantOK returns (address) {
         return marketStorage.governorAdmin;
-    }
-
-    /// @inheritdoc IGovernance
-    function pauseGuardian() public view virtual reentrantOK returns (address) {
-        return marketStorage.pauseGuardian;
     }
 
     /// @inheritdoc IGovernance
@@ -106,18 +93,13 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function disabledOps() public view virtual reentrantOK returns (uint32) {
-        return (marketStorage.disabledOps.toUint32());
+    function hookedOps() public view virtual reentrantOK returns (uint32) {
+        return (marketStorage.hookedOps.toUint32());
     }
 
     /// @inheritdoc IGovernance
     function configFlags() public view virtual reentrantOK returns (uint32) {
         return (marketStorage.configFlags.toUint32());
-    }
-
-    /// @inheritdoc IGovernance
-    function lockedOps() public view virtual reentrantOK returns (uint32) {
-        return (marketStorage.lockedOps.toUint32());
     }
 
     /// @inheritdoc IGovernance
@@ -128,6 +110,11 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     /// @inheritdoc IGovernance
     function feeReceiver() public view virtual reentrantOK returns (address) {
         return marketStorage.feeReceiver;
+    }
+
+    /// @inheritdoc IGovernance
+    function hookTarget() public view virtual reentrantOK returns (address) {
+        return marketStorage.hookTarget;
     }
 
     /// @inheritdoc IGovernance
@@ -206,15 +193,15 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function setPauseGuardian(address newPauseGuardian) public virtual nonReentrant governorOnly {
-        marketStorage.pauseGuardian = newPauseGuardian;
-        emit GovSetPauseGuardian(newPauseGuardian);
-    }
-
-    /// @inheritdoc IGovernance
     function setFeeReceiver(address newFeeReceiver) public virtual nonReentrant governorOnly {
         marketStorage.feeReceiver = newFeeReceiver;
         emit GovSetFeeReceiver(newFeeReceiver);
+    }
+
+    /// @inheritdoc IGovernance
+    function setHookTarget(address newHookTarget) public virtual nonReentrant governorOnly {
+        marketStorage.hookTarget = newHookTarget;
+        emit GovSetHookTarget(newHookTarget);
     }
 
     /// @inheritdoc IGovernance
@@ -266,25 +253,9 @@ abstract contract GovernanceModule is IGovernance, Base, BalanceUtils, BorrowUti
     }
 
     /// @inheritdoc IGovernance
-    function setDisabledOps(uint32 newDisabledOps) public virtual nonReentrant governorOrPauseGuardianOnly {
-        // Overwrite bits of locked ops with their currently set values
-        newDisabledOps = (newDisabledOps & ~marketStorage.lockedOps.toUint32())
-            | (marketStorage.disabledOps.toUint32() & marketStorage.lockedOps.toUint32());
-
-        // market is updated because:
-        // if disabling interest accrual - the pending interest should be accrued
-        // if re-enabling interest - last updated timestamp needs to be reset to skip the disabled period
-        MarketCache memory marketCache = updateMarket();
-        logMarketStatus(marketCache, marketStorage.interestRate);
-
-        marketStorage.disabledOps = Flags.wrap(newDisabledOps);
-        emit GovSetDisabledOps(newDisabledOps);
-    }
-
-    /// @inheritdoc IGovernance
-    function setLockedOps(uint32 newLockedOps) public virtual nonReentrant governorOnly {
-        marketStorage.lockedOps = Flags.wrap(newLockedOps);
-        emit GovSetLockedOps(newLockedOps);
+    function setHookedOps(uint32 newHookedOps) public virtual nonReentrant governorOnly {
+        marketStorage.hookedOps = Flags.wrap(newHookedOps);
+        emit GovSetHookedOps(newHookedOps);
     }
 
     /// @inheritdoc IGovernance

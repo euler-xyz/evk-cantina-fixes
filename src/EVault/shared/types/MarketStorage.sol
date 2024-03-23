@@ -12,7 +12,7 @@ struct MarketStorage {
     Assets cash;
     AmountCap supplyCap;
     AmountCap borrowCap;
-    Flags disabledOps;
+    Flags hookedOps;
     bool reentrancyLocked;
     bool snapshotInitialized;
 
@@ -37,9 +37,8 @@ struct MarketStorage {
     address creator;
 
     address governorAdmin;
-    address pauseGuardian;
-    Flags lockedOps;
     address feeReceiver;
+    address hookTarget;
 
     mapping(address account => UserStorage) users;
 
