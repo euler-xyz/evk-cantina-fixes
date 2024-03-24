@@ -57,7 +57,7 @@ abstract contract Base is EVCClient, Cache {
         marketCache = updateMarket();
         account = EVCAuthenticateDeferred(~CONTROLLER_REQUIRED_OPS & operation == 0);
 
-        validateOperation(marketCache, operation, account);
+        runHook(marketCache, operation, account);
         EVCRequireStatusChecks(accountToCheck == CHECKACCOUNT_CALLER ? account : accountToCheck);
 
         // The snapshot is used only to verify that supply increased when checking the supply cap, and to verify that the borrows
@@ -73,19 +73,38 @@ abstract contract Base is EVCClient, Cache {
     }
 
     // Checks whether the operation is hookable and if so, calls the hook target.
-    function validateOperation(MarketCache memory marketCache, uint32 operation, address caller) internal {
+    function runHook(MarketCache memory marketCache, uint32 operation, address caller) internal {
         if (marketCache.hookedOps.isNotSet(operation)) return;
 
         address hookTarget = marketStorage.hookTarget;
+        if (hookTarget.code.length == 0) {
+            revert E_OperationDisabled();
+        }
+
         (bool success, bytes memory data) = hookTarget.call(abi.encodePacked(msg.data, caller));
 
         if (!success) {
             RevertBytes.revertBytes(data);
         }
+    }
 
-        if (hookTarget.code.length == 0) {
-            revert E_OperationDisabled();
-        }
+    // Checks whether the operation is hookable and if so, calls the hook target view function to adjust the result.
+    // Assumptions about the hooked view function:
+    // - the function returns a uint256
+    // - when related operation is disabled, the return value should be 0
+    function runHookView(MarketCache memory marketCache, uint32 operation, uint256 initialResult)
+        internal
+        view
+        returns (uint256)
+    {
+        if (marketCache.hookedOps.isNotSet(operation)) return initialResult;
+
+        address hookTarget = marketStorage.hookTarget;
+        if (hookTarget.code.length == 0) return 0;
+
+        (bool success, bytes memory data) = hookTarget.staticcall(abi.encodePacked(msg.data, initialResult));
+
+        return success ? abi.decode(data, (uint256)) : initialResult;
     }
 
     function logMarketStatus(MarketCache memory a, uint256 interestRate) internal {

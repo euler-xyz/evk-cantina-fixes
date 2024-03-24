@@ -42,9 +42,9 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
     /// @inheritdoc IERC4626
     function maxDeposit(address account) public view virtual nonReentrantView returns (uint256) {
         MarketCache memory marketCache = loadMarket();
-        if (marketCache.disabledOps.isSet(OP_DEPOSIT)) return 0;
 
-        return maxDepositInternal(marketCache, account);
+        uint256 max = maxDepositInternal(marketCache, account);
+        return runHookView(marketCache, OP_DEPOSIT, max);
     }
 
     /// @inheritdoc IERC4626
@@ -56,8 +56,8 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
     function maxMint(address account) public view virtual nonReentrantView returns (uint256) {
         MarketCache memory marketCache = loadMarket();
 
-        if (marketCache.disabledOps.isSet(OP_MINT)) return 0;
-        return maxDepositInternal(marketCache, account).toAssets().toSharesDown(marketCache).toUint();
+        uint256 max = maxDepositInternal(marketCache, account).toAssets().toSharesDown(marketCache).toUint();
+        return runHookView(marketCache, OP_MINT, max);
     }
 
     /// @inheritdoc IERC4626
@@ -69,9 +69,9 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
     /// @inheritdoc IERC4626
     function maxWithdraw(address owner) public view virtual nonReentrantView returns (uint256) {
         MarketCache memory marketCache = loadMarket();
-        if (marketCache.disabledOps.isSet(OP_WITHDRAW)) return 0;
 
-        return maxRedeemInternal(owner).toAssetsDown(marketCache).toUint();
+        uint256 max = maxRedeemInternal(owner).toAssetsDown(marketCache).toUint();
+        return runHookView(marketCache, OP_WITHDRAW, max);
     }
 
     /// @inheritdoc IERC4626
@@ -83,9 +83,9 @@ abstract contract VaultModule is IVault, Base, AssetTransfers, BalanceUtils {
     /// @inheritdoc IERC4626
     function maxRedeem(address owner) public view virtual nonReentrantView returns (uint256) {
         MarketCache memory marketCache = loadMarket();
-        if (marketCache.disabledOps.isSet(OP_REDEEM)) return 0;
 
-        return maxRedeemInternal(owner).toUint();
+        uint256 max = maxRedeemInternal(owner).toUint();
+        return runHookView(marketCache, OP_REDEEM, max);
     }
 
     /// @inheritdoc IERC4626
