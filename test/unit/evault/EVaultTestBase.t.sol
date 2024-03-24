@@ -138,6 +138,10 @@ contract MockHook {
         if (asset != caller()) revert E_OnlyAssetCanDeposit();
     }
 
+    function maxMint(address) external pure returns (uint256) {
+        return 0;
+    }
+
     // all the other hooked ops are disabled
     fallback() external {
         revert E_OperationDisabled();

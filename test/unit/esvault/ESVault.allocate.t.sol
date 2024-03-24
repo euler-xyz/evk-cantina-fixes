@@ -18,6 +18,7 @@ contract ESVaultTestAllocate is ESVaultTestBase {
 
         vm.expectRevert(MockHook.E_OperationDisabled.selector);
         eTST.mint(100, address(this));
+        assertEq(eTST.maxMint(address(this)), 0);
 
         vm.expectRevert(MockHook.E_OperationDisabled.selector);
         eTST.skim(100, address(this));
