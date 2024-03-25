@@ -36,7 +36,7 @@ contract ESRFuzzTest is ESRTest {
     // some interest might be lost due to the uint168 cast
     function testFuzz_gulp_under_uint168(uint256 interestAmount, uint256 depositAmount, uint256 timePassed) public {
         depositAmount = bound(depositAmount, 0, type(uint112).max);
-        interestAmount = bound(interestAmount, 0, type(uint112).max - depositAmount); // this makes sure that the mint won't cause overflow
+        interestAmount = bound(interestAmount, 0, type(uint256).max - depositAmount); // this makes sure that the mint won't cause overflow
         timePassed = bound(timePassed, block.timestamp, type(uint40).max);
         asset.mint(address(esr), interestAmount);
 
