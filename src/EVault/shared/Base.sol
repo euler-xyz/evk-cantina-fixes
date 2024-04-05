@@ -67,6 +67,7 @@ abstract contract Base is EVCClient, Cache {
     // Returns the VaultCache and active account.
     function initOperation(uint32 operation, address accountToCheck)
         internal
+        virtual
         returns (VaultCache memory vaultCache, address account)
     {
         vaultCache = updateVault();
@@ -95,7 +96,7 @@ abstract contract Base is EVCClient, Cache {
 
     // Checks whether the operation is hookable and if so, calls the hook target.
     // If the hook target is not a contract, the operation is considered disabled.
-    function validateAndCallHook(Flags hookedOps, uint32 operation, address caller) internal {
+    function validateAndCallHook(Flags hookedOps, uint32 operation, address caller) internal virtual {
         if (hookedOps.isNotSet(operation)) return;
 
         address hookTarget = vaultStorage.hookTarget;
