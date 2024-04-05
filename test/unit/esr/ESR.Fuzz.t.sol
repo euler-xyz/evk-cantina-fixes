@@ -34,6 +34,10 @@ contract ESRFuzzTest is ESRTest {
 
     // this tests shows that when you have a very small deposit and a very large interestAmount minted to the contract
     function testFuzz_gulp_under_uint168(uint256 interestAmount, uint256 depositAmount, uint256 timePassed) public {
+        interestAmount = 374144419156711147060143317175368453031918731001854;
+        depositAmount = 23160163989288986757762660808011990845581734848165032037572288613901021819186;
+        timePassed = 24522423700382505171564742382131826687940431088566216452316326074585081446400;
+        
         depositAmount = bound(depositAmount, 0, type(uint112).max);
         interestAmount = bound(interestAmount, 0, type(uint256).max - depositAmount); // this makes sure that the mint won't cause overflow
         timePassed = bound(timePassed, block.timestamp, type(uint40).max);
