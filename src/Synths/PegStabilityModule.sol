@@ -79,7 +79,8 @@ contract PegStabilityModule is EVCUtil {
     }
 
     function quoteToUnderlyingGivenOut(uint256 amountOut) public view returns (uint256) {
-        return amountOut * BPS_SCALE / (BPS_SCALE - TO_UNDERLYING_FEE);
+        uint256 divisor = BPS_SCALE - TO_UNDERLYING_FEE;
+        return (amountOut * BPS_SCALE + divisor - 1) / divisor;
     }
 
     function quoteToSynthGivenIn(uint256 amountIn) public view returns (uint256) {
@@ -87,6 +88,7 @@ contract PegStabilityModule is EVCUtil {
     }
 
     function quoteToSynthGivenOut(uint256 amountOut) public view returns (uint256) {
-        return amountOut * BPS_SCALE / (BPS_SCALE - TO_SYNTH_FEE);
+        uint256 divisor = BPS_SCALE - TO_SYNTH_FEE;
+        return (amountOut * BPS_SCALE + divisor - 1) / divisor;
     }
 }

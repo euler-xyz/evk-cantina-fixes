@@ -125,7 +125,8 @@ contract PSMTest is Test {
 
     function testSwapToUnderlyingGivenOut() public {
         uint256 amountOut = 10e18;
-        uint256 expectedAmountIn = amountOut * BPS_SCALE / (BPS_SCALE - TO_UNDERLYING_FEE);
+        uint256 expectedAmountIn =
+            (amountOut * BPS_SCALE + BPS_SCALE - TO_UNDERLYING_FEE - 1) / (BPS_SCALE - TO_UNDERLYING_FEE);
 
         uint256 swapperSynthBalanceBefore = synth.balanceOf(wallet1);
         uint256 receiverBalanceBefore = underlying.balanceOf(wallet2);
@@ -165,7 +166,7 @@ contract PSMTest is Test {
 
     function testSwapToSynthGivenOut() public {
         uint256 amountOut = 10e18;
-        uint256 expectedAmountIn = amountOut * BPS_SCALE / (BPS_SCALE - TO_SYNTH_FEE);
+        uint256 expectedAmountIn = (amountOut * BPS_SCALE + BPS_SCALE - TO_SYNTH_FEE - 1) / (BPS_SCALE - TO_SYNTH_FEE);
 
         uint256 swapperUnderlyingBalanceBefore = underlying.balanceOf(wallet1);
         uint256 receiverSynthBalanceBefore = synth.balanceOf(wallet2);
@@ -195,7 +196,8 @@ contract PSMTest is Test {
 
     function testQuoteToUnderlyingGivenOut() public view {
         uint256 amountOut = 10e18;
-        uint256 expectedAmountIn = amountOut * BPS_SCALE / (BPS_SCALE - TO_UNDERLYING_FEE);
+        uint256 expectedAmountIn =
+            (amountOut * BPS_SCALE + BPS_SCALE - TO_UNDERLYING_FEE - 1) / (BPS_SCALE - TO_UNDERLYING_FEE);
 
         uint256 amountIn = psm.quoteToUnderlyingGivenOut(amountOut);
 
@@ -213,10 +215,46 @@ contract PSMTest is Test {
 
     function testQuoteToSynthGivenOut() public view {
         uint256 amountOut = 10e18;
-        uint256 expectedAmountIn = amountOut * BPS_SCALE / (BPS_SCALE - TO_SYNTH_FEE);
+        uint256 expectedAmountIn = (amountOut * BPS_SCALE + BPS_SCALE - TO_SYNTH_FEE - 1) / (BPS_SCALE - TO_SYNTH_FEE);
 
         uint256 amountIn = psm.quoteToSynthGivenOut(amountOut);
 
         assertEq(amountIn, expectedAmountIn);
+    }
+
+    function testQuoteToUnderlyingSymmetry(uint256 amountIn, uint256 underlyingFee) public {
+        underlyingFee = bound(underlyingFee, 0, BPS_SCALE - 1);
+
+        amountIn = bound(amountIn, BPS_SCALE - underlyingFee, type(uint256).max / (BPS_SCALE - underlyingFee) - 1);
+        PegStabilityModule newPSM =
+            new PegStabilityModule(address(evc), address(synth), address(underlying), underlyingFee, TO_SYNTH_FEE);
+
+        uint256 amountOut = newPSM.quoteToUnderlyingGivenIn(amountIn);
+        uint256 amountInBackRoundUp = newPSM.quoteToUnderlyingGivenOut(amountOut);
+
+        uint256 amountInBackRoundDown = amountOut * BPS_SCALE / (BPS_SCALE - underlyingFee);
+
+        uint256 diffRoundUp = amountIn - amountInBackRoundUp;
+        uint256 diffRoundDown = amountIn - amountInBackRoundDown;
+
+        assertLe(diffRoundUp, diffRoundDown);
+    }
+
+    function testQuoteToSynthSymmetry(uint256 amountIn, uint256 synthFee) public {
+        synthFee = bound(synthFee, 0, BPS_SCALE - 1);
+
+        amountIn = bound(amountIn, BPS_SCALE - synthFee, type(uint256).max / (BPS_SCALE - synthFee) - 1);
+        PegStabilityModule newPSM =
+            new PegStabilityModule(address(evc), address(synth), address(underlying), TO_UNDERLYING_FEE, synthFee);
+
+        uint256 amountOut = newPSM.quoteToSynthGivenIn(amountIn);
+        uint256 amountInBackRoundUp = newPSM.quoteToSynthGivenOut(amountOut);
+
+        uint256 amountInBackRoundDown = amountOut * BPS_SCALE / (BPS_SCALE - synthFee);
+
+        uint256 diffRoundUp = amountIn - amountInBackRoundUp;
+        uint256 diffRoundDown = amountIn - amountInBackRoundDown;
+
+        assertLe(diffRoundUp, diffRoundDown);
     }
 }
