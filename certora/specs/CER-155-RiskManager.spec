@@ -123,8 +123,8 @@ function CVLProxyMetadata() returns (address, address, address) {
 // TODO refactor to avoid duplicating this. Need a way around type declaration
 // for LTVConfig.
 function LTVConfigAssumptions(env e, RiskManager.LTVConfig ltvConfig) returns bool {
-    bool targetLTVLessOne = ltvConfig.targetLTV < 10000;
-    bool originalLTVLessOne = ltvConfig.originalLTV < 10000;
+    // bool targetLTVLessOne = ltvConfig.targetLTV < 10000;
+    // bool originalLTVLessOne = ltvConfig.originalLTV < 10000;
     bool target_less_original = ltvConfig.targetLTV < ltvConfig.originalLTV;
     mathint timeRemaining = ltvConfig.targetTimestamp - e.block.timestamp;
     return targetLTVLessOne &&
