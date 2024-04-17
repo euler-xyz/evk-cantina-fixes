@@ -67,15 +67,7 @@ methods {
 // ghost CVLGetQuotes_bidOut(uint256, address, address) returns uint256;
 // ghost CVLGetQuotes_askOut(uint256, address, address) returns uint256;
 
-ghost CVLGetQuote(uint256, address, address) returns uint256 {
-    // The total value returned by the oracle is assumed < 2**230-1.
-    // There will be overflows without an upper bound on this number.
-    // (For example, it must be less than 2**242-1 to avoid overflow in
-    // LTVConfig.mul)
-    axiom forall uint256 x. forall address y. forall address z. 
-        CVLGetQuote(x, y, z) < 1725436586697640946858688965569256363112777243042596638790631055949823;
-}
-
+ghost CVLGetQuote(uint256, address, address) returns uint256;
 
 function CVLGetQuotes(uint256 amount, address base, address quote) returns (uint256, uint256) {
     return (
@@ -181,15 +173,9 @@ rule checkLiquidation_mustRevert {
 
 function LTVConfigAssumptions(env e, address collateral) returns bool {
     Liquidation.LTVConfig ltvConfig = getLTVConfig(e, collateral);
-    // the LTV should be less than 1. Here 1e4 is the scaling factor.
-    // So we assume governance sets these GT 1.
-    bool targetLTVLessOne = ltvConfig.targetLTV < 10000;
-    bool originalLTVLessOne = ltvConfig.originalLTV < 10000;
     bool target_less_original = ltvConfig.targetLTV < ltvConfig.originalLTV;
     mathint timeRemaining = ltvConfig.targetTimestamp - e.block.timestamp;
-    return targetLTVLessOne &&
-        originalLTVLessOne &&
-        target_less_original &&
+    return target_less_original &&
         require_uint32(timeRemaining) < ltvConfig.rampDuration;
 }
 
