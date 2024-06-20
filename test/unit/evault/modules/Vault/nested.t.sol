@@ -347,34 +347,46 @@ contract VaultTest_Nested is EVaultTestBase {
         eTSTNested.repay(0.1e18, borrower);
 
         // but pullDebt and repay works
-        startHoax(borrower2);
-        assetTST.mint(borrower2, type(uint256).max);
-        assetTST.approve(address(eTST), type(uint256).max);
-        eTST.deposit(10e18, borrower2);
-        eTST.approve(address(eTSTNested), type(uint256).max);
-        // eTSTNested.deposit(type(uint256).max, borrower2);
 
-        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](4);
+        address subaccount = address(uint160(borrower) ^ 0x10);
+
+        assetTST.mint(borrower, 100e18);
+        assetTST.approve(address(eTST), type(uint256).max);
+        eTST.deposit(10e18, subaccount);
+
+        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](6);
         items[0] = IEVC.BatchItem({
             onBehalfOfAccount: address(0),
             targetContract: address(evc),
             value: 0,
-            data: abi.encodeCall(evc.enableController, (borrower2, address(eTSTNested)))
+            data: abi.encodeCall(evc.enableController, (subaccount, address(eTSTNested)))
         });
         items[1] = IEVC.BatchItem({
-            onBehalfOfAccount: borrower2,
+            onBehalfOfAccount: subaccount,
+            targetContract: address(eTST),
+            value: 0,
+            data: abi.encodeCall(eTST.approve, (address(eTSTNested), type(uint256).max))
+        });
+        items[2] = IEVC.BatchItem({
+            onBehalfOfAccount: subaccount,
+            targetContract: address(eTSTNested),
+            value: 0,
+            data: abi.encodeCall(eTSTNested.deposit, (type(uint256).max, subaccount))
+        });
+        items[3] = IEVC.BatchItem({
+            onBehalfOfAccount: subaccount,
             targetContract: address(eTSTNested),
             value: 0,
             data: abi.encodeCall(eTSTNested.pullDebt, (0.1e18, borrower))
         });
-        items[2] = IEVC.BatchItem({
-            onBehalfOfAccount: borrower2,
+        items[4] = IEVC.BatchItem({
+            onBehalfOfAccount: subaccount,
             targetContract: address(eTSTNested),
             value: 0,
-            data: abi.encodeCall(eTSTNested.repay, (type(uint256).max, borrower2))
+            data: abi.encodeCall(eTSTNested.repayWithShares, (type(uint256).max, subaccount))
         });
-        items[3] = IEVC.BatchItem({
-            onBehalfOfAccount: borrower2,
+        items[5] = IEVC.BatchItem({
+            onBehalfOfAccount: subaccount,
             targetContract: address(eTSTNested),
             value: 0,
             data: abi.encodeCall(eTSTNested.disableController, ())
@@ -382,7 +394,7 @@ contract VaultTest_Nested is EVaultTestBase {
 
         evc.batch(items);
 
-        assertEq(eTSTNested.debtOf(borrower2), 0);
+        assertEq(eTSTNested.debtOf(subaccount), 0);
 
 
         // repay the rest
