@@ -6,6 +6,7 @@ import {EVaultTestBase} from "../../EVaultTestBase.t.sol";
 import {Events} from "../../../../../src/EVault/shared/Events.sol";
 import {SafeERC20Lib} from "../../../../../src/EVault/shared/lib/SafeERC20Lib.sol";
 import {IRMMax} from "../../../../mocks/IRMMax.sol";
+import {IEVC} from "ethereum-vault-connector/interfaces/IEthereumVaultConnector.sol";
 
 import {IEVault, IRMTestDefault} from "../../EVaultTestBase.t.sol";
 
@@ -19,6 +20,7 @@ contract VaultTest_Nested is EVaultTestBase {
 
     address depositor;
     address borrower;
+    address borrower2;
 
     IEVault public eTSTNested;
     IEVault public eTSTDoubleNested;
@@ -33,6 +35,7 @@ contract VaultTest_Nested is EVaultTestBase {
 
         depositor = makeAddr("depositor");
         borrower = makeAddr("borrower");
+        borrower2 = makeAddr("borrower2");
 
         // Setup
 
@@ -343,7 +346,47 @@ contract VaultTest_Nested is EVaultTestBase {
         vm.expectRevert(Errors.E_AccountLiquidity.selector);
         eTSTNested.repay(0.1e18, borrower);
 
-        eTSTNested.repay(3e18, borrower);
+        // but pullDebt and repay works
+        startHoax(borrower2);
+        assetTST.mint(borrower2, type(uint256).max);
+        assetTST.approve(address(eTST), type(uint256).max);
+        eTST.deposit(10e18, borrower2);
+        eTST.approve(address(eTSTNested), type(uint256).max);
+        // eTSTNested.deposit(type(uint256).max, borrower2);
+
+        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](4);
+        items[0] = IEVC.BatchItem({
+            onBehalfOfAccount: address(0),
+            targetContract: address(evc),
+            value: 0,
+            data: abi.encodeCall(evc.enableController, (borrower2, address(eTSTNested)))
+        });
+        items[1] = IEVC.BatchItem({
+            onBehalfOfAccount: borrower2,
+            targetContract: address(eTSTNested),
+            value: 0,
+            data: abi.encodeCall(eTSTNested.pullDebt, (0.1e18, borrower))
+        });
+        items[2] = IEVC.BatchItem({
+            onBehalfOfAccount: borrower2,
+            targetContract: address(eTSTNested),
+            value: 0,
+            data: abi.encodeCall(eTSTNested.repay, (type(uint256).max, borrower2))
+        });
+        items[3] = IEVC.BatchItem({
+            onBehalfOfAccount: borrower2,
+            targetContract: address(eTSTNested),
+            value: 0,
+            data: abi.encodeCall(eTSTNested.disableController, ())
+        });
+
+        evc.batch(items);
+
+        assertEq(eTSTNested.debtOf(borrower2), 0);
+
+
+        // repay the rest
+        eTSTNested.repay(2.9e18, borrower);
 
         // back to healthy
         (collateralValue, liabilityValue) = eTSTNested.accountLiquidity(borrower, false);
