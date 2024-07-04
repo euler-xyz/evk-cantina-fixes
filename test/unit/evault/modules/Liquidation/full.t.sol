@@ -917,16 +917,16 @@ contract VaultLiquidation_Test is EVaultTestBase {
 
         eTST.liquidate(borrower, address(eTST2), 0, 0);
 
-        //violator
-        assertEq(eTST.debtOf(borrower), 0);
+        // violator
+        // debt is not socialized because total borrows is too small
+        assertEq(eTST.debtOf(borrower), 2);
+        assertEq(eTST.totalBorrows(), 2);
+
         assertEq(eTST2.balanceOf(borrower), 0);
 
         // liquidator:
         assertEq(eTST.debtOf(lender), 0);
         assertEq(eTST2.balanceOf(lender), 45);
-
-        // total borrows
-        assertEq(eTST.totalBorrows(), 0);
     }
 
     // yield value converted to balance rounds down to 0. equivalent to pullDebt

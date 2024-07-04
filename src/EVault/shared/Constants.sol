@@ -19,6 +19,8 @@ uint256 constant SECONDS_PER_YEAR = 365.2425 * 86400;
 uint256 constant MAX_ALLOWED_INTEREST_RATE = 291867278914945094175;
 // max valid value of the ConfigAmount custom type, signifying 100%
 uint16 constant CONFIG_SCALE = 1e4;
+// min value of total borrows which enables debt socialization during liquidations
+uint256 constant MIN_SOCIALIZATION_TOTAL_BORROWS_VALUE = 1e6;
 
 // Account status checks special values
 

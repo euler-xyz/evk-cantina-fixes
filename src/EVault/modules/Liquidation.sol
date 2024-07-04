@@ -24,6 +24,7 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
         Assets liability;
         Assets repay;
         uint256 yieldBalance;
+        uint256 liabilityValue;
     }
 
     /// @inheritdoc ILiquidation
@@ -117,17 +118,17 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
         returns (LiquidationCache memory)
     {
         // Check account health
-
-        (uint256 collateralAdjustedValue, uint256 liabilityValue) =
+        uint256 collateralAdjustedValue;
+        (collateralAdjustedValue, liqCache.liabilityValue) =
             calculateLiquidity(vaultCache, liqCache.violator, liqCache.collaterals, true);
 
         // no violation
-        if (collateralAdjustedValue > liabilityValue) return liqCache;
+        if (collateralAdjustedValue > liqCache.liabilityValue) return liqCache;
 
         // Compute discount
 
         // discountFactor = health score = 1 - discount
-        uint256 discountFactor = collateralAdjustedValue * 1e18 / liabilityValue;
+        uint256 discountFactor = collateralAdjustedValue * 1e18 / liqCache.liabilityValue;
         {
             uint256 minDiscountFactor;
             unchecked {
@@ -154,7 +155,7 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
             return liqCache;
         }
 
-        uint256 maxRepayValue = liabilityValue;
+        uint256 maxRepayValue = liqCache.liabilityValue;
         uint256 maxYieldValue = maxRepayValue * 1e18 / discountFactor;
 
         // Limit yield to borrower's available collateral, and reduce repay if necessary. This can happen when
@@ -167,7 +168,7 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
             maxYieldValue = collateralValue;
         }
 
-        liqCache.repay = (maxRepayValue * liqCache.liability.toUint() / liabilityValue).toAssets();
+        liqCache.repay = (maxRepayValue * liqCache.liability.toUint() / liqCache.liabilityValue).toAssets();
         liqCache.yieldBalance = maxYieldValue * collateralBalance / collateralValue;
 
         return liqCache;
@@ -208,12 +209,28 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
             forgiveAccountStatusCheck(liqCache.violator);
         }
 
-        // Handle debt socialization
+        // Handle debt socialization if conditions are met
+        socializeDebt(vaultCache, liqCache);
 
+        emit Liquidate(
+            liqCache.liquidator, liqCache.violator, liqCache.collateral, liqCache.repay.toUint(), liqCache.yieldBalance
+        );
+    }
+
+    function socializeDebt(VaultCache memory vaultCache, LiquidationCache memory liqCache) internal {
         if (
             vaultCache.configFlags.isNotSet(CFG_DONT_SOCIALIZE_DEBT) && liqCache.liability > liqCache.repay
                 && checkNoCollateral(liqCache.violator, liqCache.collaterals)
         ) {
+            uint256 totalBorrowsValue = (
+                vaultCache.totalBorrows.toAssetsUp().toUint() * liqCache.liabilityValue
+                    + (liqCache.liability.toUint() - 1)
+            ) / liqCache.liability.toUint();
+
+            // debt socialization with small total borrows value may have an outsized impact on shares to assets
+            // exchange rate
+            if (totalBorrowsValue < MIN_SOCIALIZATION_TOTAL_BORROWS_VALUE) return;
+
             Assets owedRemaining = liqCache.liability.subUnchecked(liqCache.repay);
             decreaseBorrow(vaultCache, liqCache.violator, owedRemaining);
 
@@ -222,10 +239,6 @@ abstract contract LiquidationModule is ILiquidation, BalanceUtils, LiquidityUtil
             emit Withdraw(liqCache.liquidator, address(0), address(0), owedRemaining.toUint(), 0);
             emit DebtSocialized(liqCache.violator, owedRemaining.toUint());
         }
-
-        emit Liquidate(
-            liqCache.liquidator, liqCache.violator, liqCache.collateral, liqCache.repay.toUint(), liqCache.yieldBalance
-        );
     }
 
     function isInLiquidationCoolOff(address account) private view returns (bool) {
