@@ -30,7 +30,9 @@ abstract contract BalanceUtils is Base {
         vaultStorage.totalShares = vaultCache.totalShares = vaultCache.totalShares + amount;
 
         if (balanceForwarderEnabled) {
-            balanceTracker.balanceTrackerHook(account, newBalance.toUint(), false);
+            balanceTracker.balanceTrackerHook(
+                account, newBalance.toUint(), vaultCache.configFlags.isSet(CFG_CHECKPOINT_BALANCES), false
+            );
         }
 
         emit Transfer(address(0), account, amount.toUint());
@@ -59,17 +61,24 @@ abstract contract BalanceUtils is Base {
             // which is indicated by the EVC with a collateral control in progress flag,
             // instruct the balance tracker to forfeit rewards due to the liquidated account, in order to
             // limit gas consumption, which could potentially be abused by violators to prevent liquidations.
-            balanceTracker.balanceTrackerHook(account, newBalance.toUint(), isControlCollateralInProgress());
+            balanceTracker.balanceTrackerHook(
+                account,
+                newBalance.toUint(),
+                vaultCache.configFlags.isSet(CFG_CHECKPOINT_BALANCES),
+                isControlCollateralInProgress()
+            );
         }
 
         emit Transfer(account, address(0), amount.toUint());
         emit Withdraw(sender, receiver, account, assets.toUint(), amount.toUint());
     }
 
-    function transferBalance(address from, address to, Shares amount) internal virtual {
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount) internal virtual {
         if (to == address(0)) revert E_BadSharesReceiver();
 
         if (!amount.isZero()) {
+            bool checkpointBalances = vaultCache.configFlags.isSet(CFG_CHECKPOINT_BALANCES);
+
             // update from
 
             UserStorage storage user = vaultStorage.users[from];
@@ -90,11 +99,13 @@ abstract contract BalanceUtils is Base {
             user.setBalance(newToBalance);
 
             if (fromBalanceForwarderEnabled) {
-                balanceTracker.balanceTrackerHook(from, newFromBalance.toUint(), isControlCollateralInProgress());
+                balanceTracker.balanceTrackerHook(
+                    from, newFromBalance.toUint(), checkpointBalances, isControlCollateralInProgress()
+                );
             }
 
             if (toBalanceForwarderEnabled && from != to) {
-                balanceTracker.balanceTrackerHook(to, newToBalance.toUint(), false);
+                balanceTracker.balanceTrackerHook(to, newToBalance.toUint(), checkpointBalances, false);
             }
         }
 

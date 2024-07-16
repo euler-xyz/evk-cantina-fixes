@@ -74,8 +74,8 @@ abstract contract FunctionOverrides is BalanceUtils, BorrowUtils {
         checkInvariants(account, address(0));
     }
 
-    function transferBalance(address from, address to, Shares amount) internal virtual override {
-        super.transferBalance(from, to, amount);
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount) internal virtual override {
+        super.transferBalance(vaultCache, from, to, amount);
         checkInvariants(from, address(0));
     }
 
@@ -145,11 +145,11 @@ contract BorrowingOverride is Borrowing, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -210,11 +210,11 @@ contract GovernanceOverride is Governance, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -304,11 +304,11 @@ contract LiquidationOverride is Liquidation, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -398,11 +398,11 @@ contract TokenOverride is Token, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 }
 
@@ -438,11 +438,11 @@ contract VaultOverride is Vault, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 }
 
@@ -478,11 +478,11 @@ contract EVaultOverride is EVault, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)

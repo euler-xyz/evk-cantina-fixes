@@ -50,26 +50,26 @@ abstract contract TokenModule is IToken, BalanceUtils {
 
     /// @inheritdoc IERC20
     function transfer(address to, uint256 amount) public virtual nonReentrant returns (bool) {
-        (, address account) = initOperation(OP_TRANSFER, CHECKACCOUNT_CALLER);
-        return transferFromInternal(account, account, to, amount.toShares());
+        (VaultCache memory vaultCache, address account) = initOperation(OP_TRANSFER, CHECKACCOUNT_CALLER);
+        return transferFromInternal(vaultCache, account, account, to, amount.toShares());
     }
 
     /// @inheritdoc IToken
     function transferFromMax(address from, address to) public virtual nonReentrant returns (bool) {
         validateTransferFromAccount(from);
 
-        (, address account) = initOperation(OP_TRANSFER, from);
+        (VaultCache memory vaultCache, address account) = initOperation(OP_TRANSFER, from);
 
-        return transferFromInternal(account, from, to, vaultStorage.users[from].getBalance());
+        return transferFromInternal(vaultCache, account, from, to, vaultStorage.users[from].getBalance());
     }
 
     /// @inheritdoc IERC20
     function transferFrom(address from, address to, uint256 amount) public virtual nonReentrant returns (bool) {
         validateTransferFromAccount(from);
 
-        (, address account) = initOperation(OP_TRANSFER, from);
+        (VaultCache memory vaultCache, address account) = initOperation(OP_TRANSFER, from);
 
-        return transferFromInternal(account, from, to, amount.toShares());
+        return transferFromInternal(vaultCache, account, from, to, amount.toShares());
     }
 
     /// @inheritdoc IERC20
@@ -81,11 +81,17 @@ abstract contract TokenModule is IToken, BalanceUtils {
         return true;
     }
 
-    function transferFromInternal(address account, address from, address to, Shares shares) private returns (bool) {
+    function transferFromInternal(
+        VaultCache memory vaultCache,
+        address account,
+        address from,
+        address to,
+        Shares shares
+    ) private returns (bool) {
         if (from == to) revert E_SelfTransfer();
 
         decreaseAllowance(from, account, shares);
-        transferBalance(from, to, shares);
+        transferBalance(vaultCache, from, to, shares);
 
         return true;
     }

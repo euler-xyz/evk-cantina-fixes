@@ -32,7 +32,9 @@ abstract contract BalanceForwarderModule is IBalanceForwarder, Base {
         bool wasBalanceForwarderEnabled = user.isBalanceForwarderEnabled();
 
         user.setBalanceForwarder(true);
-        balanceTracker.balanceTrackerHook(account, user.getBalance().toUint(), false);
+        balanceTracker.balanceTrackerHook(
+            account, user.getBalance().toUint(), vaultStorage.configFlags.isSet(CFG_CHECKPOINT_BALANCES), false
+        );
 
         if (!wasBalanceForwarderEnabled) emit BalanceForwarderStatus(account, true);
     }
@@ -47,7 +49,7 @@ abstract contract BalanceForwarderModule is IBalanceForwarder, Base {
         bool wasBalanceForwarderEnabled = user.isBalanceForwarderEnabled();
 
         user.setBalanceForwarder(false);
-        balanceTracker.balanceTrackerHook(account, 0, false);
+        balanceTracker.balanceTrackerHook(account, 0, vaultStorage.configFlags.isSet(CFG_CHECKPOINT_BALANCES), false);
 
         if (wasBalanceForwarderEnabled) emit BalanceForwarderStatus(account, false);
     }

@@ -62,8 +62,8 @@ abstract contract FunctionOverrides is BalanceUtils, BorrowUtils, StdAsserts, In
         checkInvariants(account, address(0));
     }
 
-    function transferBalance(address from, address to, Shares amount) internal virtual override {
-        super.transferBalance(from, to, amount);
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount) internal virtual override {
+        super.transferBalance(vaultCache, from, to, amount);
         checkInvariants(from, address(0));
     }
 

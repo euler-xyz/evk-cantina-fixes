@@ -54,8 +54,11 @@ uint32 constant CFG_DONT_SOCIALIZE_DEBT = 1 << 0;
 // When flag is set, asset is considered to be compatible with EVC sub-accounts and protections
 // against sending assets to sub-accounts are disabled
 uint32 constant CFG_EVC_COMPATIBLE_ASSET = 1 << 1;
+// When flag is set and the user opts-in to forward their balances, balances will be checkpointed by the balance tracker
+// contract.
+uint32 constant CFG_CHECKPOINT_BALANCES = 1 << 2;
 // Delimiter of possible config flags
-uint32 constant CFG_MAX_VALUE = 1 << 2;
+uint32 constant CFG_MAX_VALUE = 1 << 3;
 
 // EVC authentication
 

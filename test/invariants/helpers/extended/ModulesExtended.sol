@@ -64,11 +64,11 @@ contract BorrowingExtended is Borrowing, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -125,11 +125,11 @@ contract GovernanceExtended is Governance, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -219,11 +219,11 @@ contract LiquidationExtended is Liquidation, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 
     function increaseBorrow(VaultCache memory vaultCache, address account, Assets assets)
@@ -313,11 +313,11 @@ contract TokenExtended is Token, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 }
 
@@ -353,10 +353,10 @@ contract VaultExtended is Vault, FunctionOverrides {
         FunctionOverrides.decreaseBalance(vaultCache, account, sender, receiver, amount, assets);
     }
 
-    function transferBalance(address from, address to, Shares amount)
+    function transferBalance(VaultCache memory vaultCache, address from, address to, Shares amount)
         internal
         override (BalanceUtils, FunctionOverrides)
     {
-        FunctionOverrides.transferBalance(from, to, amount);
+        FunctionOverrides.transferBalance(vaultCache, from, to, amount);
     }
 }
