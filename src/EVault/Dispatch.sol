@@ -115,7 +115,7 @@ abstract contract Dispatch is
         }
     }
 
-    function delegateToModule(address module) private {
+    function delegateToModule(address module) internal virtual {
         assembly {
             calldatacopy(0, 0, calldatasize())
             let result := delegatecall(gas(), module, 0, calldatasize(), 0, 0)
@@ -126,7 +126,7 @@ abstract contract Dispatch is
         }
     }
 
-    function delegateToModuleView(address module) private view {
+    function delegateToModuleView(address module) internal view virtual {
         assembly {
             // Construct optimized custom call data for `this.viewDelegate()`
             // [selector 4B][module address 32B][calldata with stripped proxy metadata][caller address 20B]
@@ -148,7 +148,7 @@ abstract contract Dispatch is
         }
     }
 
-    function callThroughEVCInternal() private {
+    function callThroughEVCInternal() internal virtual {
         address _evc = address(evc);
         assembly {
             let mainCalldataLength := sub(calldatasize(), PROXY_METADATA_LENGTH)

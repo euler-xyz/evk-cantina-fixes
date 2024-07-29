@@ -53,6 +53,7 @@ contract EVaultTestBase is AssertionsCustomTypes, Test, DeployPermit2 {
 
     Base.Integrations integrations;
     Dispatch.DeployedModules modules;
+    address eVaultImpl;
 
     TestERC20 assetTST;
     TestERC20 assetTST2;
@@ -117,15 +118,14 @@ contract EVaultTestBase is AssertionsCustomTypes, Test, DeployPermit2 {
             governance: governanceModule
         });
 
-        address evaultImpl;
         if (deployOverrides) {
-            evaultImpl = address(new EVaultOverride(integrations, modules));
+            eVaultImpl = address(new EVaultOverride(integrations, modules));
         } else {
-            evaultImpl = address(new EVault(integrations, modules));
+            eVaultImpl = address(new EVault(integrations, modules));
         }
 
         vm.prank(admin);
-        factory.setImplementation(evaultImpl);
+        factory.setImplementation(eVaultImpl);
 
         assetTST = new TestERC20("Test Token", "TST", 18, false);
         assetTST2 = new TestERC20("Test Token 2", "TST2", 18, false);
