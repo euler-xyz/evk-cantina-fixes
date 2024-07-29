@@ -57,6 +57,11 @@ abstract contract BorrowingModule is IBorrowing, AssetTransfers, BalanceUtils, L
     }
 
     /// @inheritdoc IBorrowing
+    function lastInterestAccumulatorUpdate() public view virtual returns (uint256) {
+        return vaultStorage.lastInterestAccumulatorUpdate;
+    }
+
+    /// @inheritdoc IBorrowing
     function dToken() public view virtual reentrantOK returns (address) {
         return calculateDTokenAddress();
     }

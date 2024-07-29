@@ -223,6 +223,10 @@ interface IBorrowing {
     /// @return An opaque accumulator that increases as interest is accrued
     function interestAccumulator() external view returns (uint256);
 
+    /// @notice Retrieves the timestamp of the latest update of the interest accumulator
+    /// @return The timestamp of the latest update of the interest accumulator
+    function lastInterestAccumulatorUpdate() external view returns (uint256);
+
     /// @notice Returns an address of the sidecar DToken
     /// @return The address of the DToken
     function dToken() external view returns (address);

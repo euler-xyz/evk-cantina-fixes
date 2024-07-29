@@ -113,6 +113,8 @@ contract EVault is Dispatch {
 
     function interestAccumulator() public view virtual override useView(MODULE_BORROWING) returns (uint256) {}
 
+    function lastInterestAccumulatorUpdate() public view virtual override useView(MODULE_BORROWING) returns (uint256) {}
+
     function dToken() public view virtual override useView(MODULE_BORROWING) returns (address) {}
 
 
